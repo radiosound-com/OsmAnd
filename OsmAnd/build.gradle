@@ -5,6 +5,8 @@ apply from: rootProject.file("versions.gradle")
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
 
+def automotiveBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains('automotive') }
+
 // Global Parameters accepted
 // TARGET_APP_NAME    - app name
 // APK_NUMBER_VERSION - version number of apk
@@ -49,7 +51,7 @@ android {
 	}
 
 	defaultConfig {
-		minSdkVersion osmand_minSdk
+		minSdkVersion automotiveBuild ? 29 : osmand_minSdk
 		versionCode 5399
 		versionCode System.getenv("APK_NUMBER_VERSION") ? System.getenv("APK_NUMBER_VERSION").toInteger() : versionCode
 		versionName "5.4.0"
@@ -82,6 +84,10 @@ android {
 	sourceSets {
 		debug {
 			manifest.srcFile "AndroidManifest-debug.xml"
+		}
+		automotive {
+			manifest.srcFile "AndroidManifest-automotive.xml"
+			res.srcDirs = ["res-automotive"]
 		}
 		gplayFull {
 			java.srcDirs = ["src-google"]
@@ -159,6 +165,9 @@ android {
 
 	buildTypes {
 		debug {
+			signingConfig signingConfigs.development
+		}
+		automotive {
 			signingConfig signingConfigs.development
 		}
 		release {

@@ -107,6 +107,10 @@ android {
 		debug {
 			debuggable true
 		}
+		automotive {
+			initWith debug
+			matchingFallbacks = ['debug']
+		}
 		release {
 			debuggable false
 		}
@@ -423,6 +427,7 @@ dependencies {
 	}
 
 	debugImplementation "net.osmand:MPAndroidChart:custom-snapshot-debug@aar"
+	automotiveImplementation "net.osmand:MPAndroidChart:custom-snapshot-debug@aar"
 	releaseImplementation "net.osmand:MPAndroidChart:custom-snapshot-release@aar"
 
 	implementation("com.github.HITGIF:TextFieldBoxes:1.4.5") {
@@ -435,6 +440,7 @@ dependencies {
 
 	implementation "androidx.car.app:app:1.7.0"
 	implementation "androidx.car.app:app-projected:1.7.0"
+	automotiveImplementation "androidx.car.app:app-automotive:1.7.0"
 
 	implementation 'com.google.android.gms:play-services-location:21.3.0'
 

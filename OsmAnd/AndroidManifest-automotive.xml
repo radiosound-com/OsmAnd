@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+		xmlns:tools="http://schemas.android.com/tools">
+
+	<uses-feature
+		android:name="android.software.car.templates_host"
+		android:required="true" />
+
+	<application>
+		<meta-data
+			android:name="com.android.automotive"
+			android:resource="@xml/automotive_app_desc" />
+
+		<meta-data
+			android:name="com.google.android.gms.car.application"
+			tools:node="remove" />
+
+		<service
+			android:name="androidx.car.app.CarAppMetadataHolderService"
+			tools:node="merge">
+			<meta-data
+				android:name="androidx.car.app.CarAppMetadataHolderService.CAR_HARDWARE_MANAGER"
+				android:value="androidx.car.app.hardware.AutomotiveCarHardwareManager"
+				tools:replace="android:value" />
+		</service>
+
+		<!-- The Automotive launcher must enter through CarAppActivity, not the tablet MapActivity. -->
+		<activity
+			android:name="net.osmand.plus.activities.MapActivity"
+			tools:node="merge">
+			<intent-filter tools:node="remove">
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<category android:name="android.intent.category.APP_MAPS" />
+			</intent-filter>
+		</activity>
+
+		<activity
+			android:name="androidx.car.app.activity.CarAppActivity"
+			android:exported="true"
+			android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+			android:launchMode="singleTask"
+			android:label="@string/app_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.APP_MAPS" />
+			</intent-filter>
+			<intent-filter>
+				<action android:name="androidx.car.app.action.NAVIGATE" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:scheme="geo" />
+			</intent-filter>
+			<meta-data android:name="distractionOptimized" android:value="true" />
+		</activity>
+	</application>
+</manifest>
