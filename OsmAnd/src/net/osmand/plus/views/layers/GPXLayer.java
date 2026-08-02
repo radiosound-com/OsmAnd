@@ -1,3 +1,7 @@
+/*
+ * Copyright 2026 Radio Sound, Inc. for Caramel Vanilla AAOS changes.
+ * This file remains under the upstream OsmAnd license; see the repository LICENSE.
+ */
 package net.osmand.plus.views.layers;
 
 import static net.osmand.plus.configmap.ConfigureMapMenu.CURRENT_TRACK_COLOR_ATTR;

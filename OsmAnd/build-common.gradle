@@ -1,3 +1,6 @@
+// Copyright 2026 Radio Sound, Inc. for Caramel Vanilla AAOS changes.
+// This file remains under the upstream OsmAnd license; see the repository LICENSE.
+
 apply from: rootProject.file("versions.gradle")
 
 tasks.register('printc') {

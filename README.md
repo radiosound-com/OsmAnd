@@ -4,6 +4,22 @@ This project aims at providing comfortable map viewing and navigation (routing) 
 To get started, continue with the basic description below, then find more detail on our Welcome Wiki Pages, the Project Homepage, or the OpenStreetMap OsmAnd Wiki Page.
 You are welcome to discuss any question regarding the project at the Google group OsmAnd. Please do not use comments on wiki pages because it is rather difficult to find them.
 
+## Caramel Vanilla Android Automotive fork
+
+Copyright 2026 Radio Sound, Inc. for the Caramel Vanilla AAOS additions.
+
+The `caramel-vanilla-osmand-aaos` branch contains Radio Sound, Inc.'s Android
+Automotive integration, including the templated maps entrypoint and the
+separate full-UI launcher. The upstream OsmAnd license and third-party notices
+remain applicable; see [LICENSE](LICENSE).
+
+Related published Caramel Vanilla source:
+
+* [Product manifest](https://github.com/radiosound-com/caramel-vanilla-manifest)
+* [Raspberry Pi 5 device integration](https://github.com/radiosound-com/android_device_brcm_rpi5/tree/caramel-vanilla-aaos)
+* [OsmAnd product packaging](https://github.com/radiosound-com/android_vendor_osmand)
+* [Templates host](https://github.com/radiosound-com/android_packages_apps_Car_TemplatesHost)
+
 
 
 |Android markets|
