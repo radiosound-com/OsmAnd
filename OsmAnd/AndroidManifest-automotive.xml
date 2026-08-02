@@ -54,5 +54,17 @@
 			</intent-filter>
 			<meta-data android:name="distractionOptimized" android:value="true" />
 		</activity>
+
+		<!-- Keep the complete Android UI reachable for downloads and other parked-only tasks. -->
+		<activity-alias
+			android:name="net.osmand.plus.activities.FullUiLauncher"
+			android:targetActivity="net.osmand.plus.activities.MapActivity"
+			android:exported="true"
+			android:label="@string/full_ui_launcher_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
 	</application>
 </manifest>
