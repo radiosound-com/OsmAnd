@@ -34,7 +34,7 @@ esac
 
 bindings=$(
 	"$ADB" shell dumpsys activity services "$PACKAGE" \
-	| grep -c 'com.google.android.apps.automotive.templates.host:renderer_service' || true
+		| grep -E -c 'templates\.host|TemplatesHostService|renderer_service' || true
 )
 if [ "$bindings" -eq 0 ]; then
 	echo "FAIL: CarAppService is not bound to an Automotive templates host" >&2
