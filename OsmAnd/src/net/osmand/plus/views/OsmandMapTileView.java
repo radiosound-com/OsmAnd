@@ -503,6 +503,14 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 		changeZoomManually(1, is3DMode());
 	}
 
+	/**
+	 * Zooms one step while keeping the map location beneath the supplied screen
+	 * point as the zoom anchor.
+	 */
+	public void zoomAtPoint(float x, float y, int zoomStep) {
+		zoomToAnimate(getRotatedTileBox(), zoomStep, Math.round(x), Math.round(y));
+	}
+
 	public void scrollMap(float dx, float dy) {
 		moveTo(dx, dy, true);
 	}
