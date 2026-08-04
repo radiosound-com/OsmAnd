@@ -52,8 +52,6 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 	private static final double VISIBLE_AREA_Y_MIN_DETECTION_SIZE = 1.025;
 	private static final int MAP_RENDER_MESSAGE = OsmAndConstants.UI_HANDLER_MAP_VIEW + 7;
 	private static final int MAX_FRAME_RATE = 20;
-	public static final int PINCH_TO_ZOOM_ITERATION_DELAY = 200;
-
 	private final CarContext carContext;
 	private final CarSurfaceView surfaceView;
 	private OsmandMapTileView mapView;
@@ -227,17 +225,9 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 			}
 		}
 
-		long lastScaleTime = 0;
-		Boolean lastZoomDirection;
-
 		@Override
 		public void onScale(float focusX, float focusY, float scaleFactor) {
-			boolean zoomDirection = scaleFactor > 1;
-			if (System.currentTimeMillis() - lastScaleTime > PINCH_TO_ZOOM_ITERATION_DELAY || lastZoomDirection == null || lastZoomDirection != zoomDirection) {
-				handleScale(focusX, focusY, scaleFactor);
-				lastScaleTime = System.currentTimeMillis();
-				lastZoomDirection = zoomDirection;
-			}
+			handleScale(focusX, focusY, scaleFactor);
 		}
 	};
 
@@ -307,12 +297,8 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 				}
 			}
 			OsmandMapTileView mapView = this.mapView;
-			if (mapView != null) {
-				if (scaleFactor > 1) {
-					mapView.zoomAtPoint(x, y, 1);
-				} else if (scaleFactor < 1) {
-					mapView.zoomAtPoint(x, y, -1);
-				}
+			if (mapView != null && Float.isFinite(scaleFactor) && scaleFactor > 0 && scaleFactor != 1.0f) {
+				mapView.zoomAtPoint(x, y, scaleFactor);
 			}
 		}
 	}

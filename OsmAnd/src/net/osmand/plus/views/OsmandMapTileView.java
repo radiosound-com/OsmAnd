@@ -108,6 +108,8 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	private static final float ZOOM_STEP_TO_FIT = 0.05f;
 	private static final float MARGIN_PERCENT_TO_FIT = 0.8f;
 	private static final int CHANGE_LOCATION_DIFF_METERS = 2;
+	private static final float PINCH_SCALE_TO_ZOOM = 2.164f;
+	private static final float MAX_PINCH_DELTA_ZOOM = 4f;
 
 	private static final int LIMITED_MAX_FRAME_RATE = 20;
 	private static final int USER_INTERACTION_MAX_FRAME_RATE = 120;
@@ -504,11 +506,16 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	}
 
 	/**
-	 * Zooms one step while keeping the map location beneath the supplied screen
-	 * point as the zoom anchor.
+	 * Applies one incremental pinch scale while keeping the map location beneath
+	 * the supplied screen point as the zoom anchor.
 	 */
-	public void zoomAtPoint(float x, float y, int zoomStep) {
-		zoomToAnimate(getRotatedTileBox(), zoomStep, Math.round(x), Math.round(y));
+	public void zoomAtPoint(float x, float y, float scaleFactor) {
+		if (!Float.isFinite(scaleFactor) || scaleFactor <= 0 || scaleFactor == 1.0f) {
+			return;
+		}
+		float deltaZoom = (float) (Math.log(scaleFactor) * PINCH_SCALE_TO_ZOOM);
+		deltaZoom = Math.max(-MAX_PINCH_DELTA_ZOOM, Math.min(MAX_PINCH_DELTA_ZOOM, deltaZoom));
+		zoomToAnimate(getRotatedTileBox(), deltaZoom, Math.round(x), Math.round(y));
 	}
 
 	public void scrollMap(float dx, float dy) {
@@ -2205,8 +2212,6 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 		private static final float ZONE_0_ZOOM_THRESHOLD = 0.15f;
 		private static final float ZONE_1_ZOOM_THRESHOLD = 0.6f;
 		private static final float ZONE_2_ZOOM_THRESHOLD = 1.5f;
-		private static final float MAX_DELTA_ZOOM = 4;
-
 		private PointF initialMultiTouchCenterPoint;
 		private RotatedTileBox initialViewport;
 		private float x1;
@@ -2490,12 +2495,11 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 		}
 
 		private double calculateDeltaZoom(double relativeToStart) {
-			// 1.5/Math.log(2) = 2.1640
-			double deltaZoom = Math.log(relativeToStart) * 2.164;
-			if (deltaZoom > MAX_DELTA_ZOOM) {
-				return MAX_DELTA_ZOOM;
-			} else if (deltaZoom < -MAX_DELTA_ZOOM) {
-				return -MAX_DELTA_ZOOM;
+			double deltaZoom = Math.log(relativeToStart) * PINCH_SCALE_TO_ZOOM;
+			if (deltaZoom > MAX_PINCH_DELTA_ZOOM) {
+				return MAX_PINCH_DELTA_ZOOM;
+			} else if (deltaZoom < -MAX_PINCH_DELTA_ZOOM) {
+				return -MAX_PINCH_DELTA_ZOOM;
 			}
 			return deltaZoom;
 		}
