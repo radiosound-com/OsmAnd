@@ -27,6 +27,8 @@
 		<!-- The Automotive launcher must enter through CarAppActivity, not the tablet MapActivity. -->
 		<activity
 			android:name="net.osmand.plus.activities.MapActivity"
+			android:resizeableActivity="false"
+			android:taskAffinity="net.osmand.dev.fullui"
 			tools:node="merge">
 			<intent-filter tools:node="remove">
 				<action android:name="android.intent.action.MAIN" />
@@ -44,7 +46,6 @@
 			android:label="@string/app_name">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<category android:name="android.intent.category.APP_MAPS" />
 			</intent-filter>
@@ -55,6 +56,30 @@
 			</intent-filter>
 			<meta-data android:name="distractionOptimized" android:value="true" />
 		</activity>
+
+		<!-- App-drawer Nightly entry: a dedicated full-screen CarApp task. -->
+		<activity
+			android:name="net.osmand.plus.auto.FullScreenCarAppActivity"
+			android:exported="true"
+			android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+			android:excludeFromRecents="true"
+			android:noHistory="true"
+			android:taskAffinity="net.osmand.dev.nightly.launcher"
+			android:label="@string/app_name">
+			<meta-data android:name="distractionOptimized" android:value="true" />
+		</activity>
+
+		<!-- App-drawer Nightly entry: driving-optimized UI in a full-screen task. -->
+		<activity-alias
+			android:name="net.osmand.plus.activities.NightlyFullUiLauncher"
+			android:targetActivity="net.osmand.plus.auto.FullScreenCarAppActivity"
+			android:exported="true"
+			android:label="@string/app_name">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
 
 		<!-- Keep the complete Android UI reachable for downloads and other parked-only tasks. -->
 		<activity-alias

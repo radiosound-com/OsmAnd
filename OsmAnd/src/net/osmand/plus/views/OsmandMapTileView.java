@@ -511,11 +511,49 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	 */
 	public void zoomAtPoint(float x, float y, float scaleFactor) {
 		if (!Float.isFinite(scaleFactor) || scaleFactor <= 0 || scaleFactor == 1.0f) {
+			LOG.info("automotive pinch ignored factor=" + scaleFactor);
 			return;
 		}
 		float deltaZoom = (float) (Math.log(scaleFactor) * PINCH_SCALE_TO_ZOOM);
-		deltaZoom = Math.max(-MAX_PINCH_DELTA_ZOOM, Math.min(MAX_PINCH_DELTA_ZOOM, deltaZoom));
-		zoomToAnimate(getRotatedTileBox(), deltaZoom, Math.round(x), Math.round(y));
+		float maxAutomotiveDeltaZoom = 1.5f;
+		deltaZoom = Math.max(-maxAutomotiveDeltaZoom, Math.min(maxAutomotiveDeltaZoom, deltaZoom));
+		int maxX = Math.max(0, (view != null ? view.getWidth() : 1) - 1);
+		int maxY = Math.max(0, (view != null ? view.getHeight() : 1) - 1);
+		int centerX = Math.max(0, Math.min(maxX, Math.round(x)));
+		int centerY = Math.max(0, Math.min(maxY, Math.round(y)));
+		RotatedTileBox initialViewport = getCurrentRotatedTileBox().copy();
+		boolean rendererAvailable = getMapRenderer() != null;
+		double currentZoom = initialViewport.getFullZoom();
+		double targetZoom = Math.max(getMinZoom(), Math.min(getMaxZoom(), currentZoom + deltaZoom));
+		int targetBaseZoom = (int) Math.floor(targetZoom + 0.5d);
+		targetBaseZoom = Math.max(getMinZoom(), Math.min(getMaxZoom(), targetBaseZoom));
+		double targetZoomFloatPart = targetZoom - targetBaseZoom;
+		LOG.info("automotive pinch factor=" + scaleFactor + " delta=" + deltaZoom
+				+ " current=" + currentZoom + " target=" + targetZoom
+				+ " point=" + centerX + "," + centerY + " view=" + maxX + "x" + maxY
+				+ " renderer=" + rendererAvailable);
+		getAnimatedDraggingThread().stopAnimating();
+		if (!rendererAvailable) {
+			// The bitmap renderer has no target API for an off-center anchor. Solve
+			// the anchor in the tile-box projection instead: project the geographic
+			// point under the fingers at the target zoom, then move the new center so
+			// that point remains under the same screen coordinate.
+			LatLon anchor = initialViewport.getLatLonFromPixel(centerX, centerY);
+			RotatedTileBox targetViewport = initialViewport.copy();
+			targetViewport.setZoomAndAnimation(targetBaseZoom, 0, targetZoomFloatPart);
+			float anchorX = targetViewport.getPixXFromLatLon(anchor.getLatitude(), anchor.getLongitude());
+			float anchorY = targetViewport.getPixYFromLatLon(anchor.getLatitude(), anchor.getLongitude());
+			float newCenterX = targetViewport.getCenterPixelX() + anchorX - centerX;
+			float newCenterY = targetViewport.getCenterPixelY() + anchorY - centerY;
+			LatLon newCenter = targetViewport.getLatLonFromPixel(newCenterX, newCenterY);
+			if (newCenter != null && Double.isFinite(newCenter.getLatitude())
+					&& Double.isFinite(newCenter.getLongitude())) {
+				setLatLonImpl(newCenter.getLatitude(), newCenter.getLongitude());
+			}
+		}
+		setZoomAndAnimationImpl(targetBaseZoom, 0, targetZoomFloatPart, centerX, centerY);
+		refreshMap();
+		notifyLocationListeners(getLatitude(), getLongitude());
 	}
 
 	public void scrollMap(float dx, float dy) {

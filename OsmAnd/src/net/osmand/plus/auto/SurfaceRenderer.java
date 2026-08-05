@@ -29,6 +29,7 @@ import net.osmand.core.android.MapRendererView;
 import net.osmand.core.android.MapRendererView.MapRendererViewListener;
 import net.osmand.core.jni.ZoomLevel;
 import net.osmand.data.RotatedTileBox;
+import net.osmand.util.MapUtils;
 import net.osmand.plus.AppInitializeListener;
 import net.osmand.plus.AppInitializer;
 import net.osmand.plus.OsmAndConstants;
@@ -51,11 +52,19 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 
 	private static final double VISIBLE_AREA_Y_MIN_DETECTION_SIZE = 1.025;
 	private static final int MAP_RENDER_MESSAGE = OsmAndConstants.UI_HANDLER_MAP_VIEW + 7;
-	private static final int MAX_FRAME_RATE = 20;
+	private static final int MAX_FRAME_RATE = 60;
+	private static final long PINCH_UPDATE_INTERVAL_MS = 16;
 	private final CarContext carContext;
 	private final CarSurfaceView surfaceView;
 	private OsmandMapTileView mapView;
 	private final Handler handler;
+	private final Object scaleLock = new Object();
+	private final Runnable applyPendingScaleRunnable = this::applyPendingScale;
+	private float pendingScaleFactor = 1.0f;
+	private float pendingScaleFocusX;
+	private float pendingScaleFocusY;
+	private int scaleDebugCount;
+	private boolean scaleUpdateScheduled;
 
 	@Nullable
 	private AtlasMapRendererView offscreenMapRendererView;
@@ -227,7 +236,7 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 
 		@Override
 		public void onScale(float focusX, float focusY, float scaleFactor) {
-			handleScale(focusX, focusY, scaleFactor);
+			queueScale(focusX, focusY, scaleFactor);
 		}
 	};
 
@@ -246,6 +255,51 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 			});
 			msg.what = MAP_RENDER_MESSAGE;
 			handler.sendMessage(msg);
+		}
+	}
+
+	private void queueScale(float focusX, float focusY, float scaleFactor) {
+		if (!Float.isFinite(scaleFactor) || scaleFactor <= 0 || scaleFactor == 1.0f) {
+			return;
+		}
+		synchronized (scaleLock) {
+			scaleDebugCount++;
+			float combinedScaleFactor = pendingScaleFactor * scaleFactor;
+			pendingScaleFactor = Float.isFinite(combinedScaleFactor) && combinedScaleFactor > 0
+					? combinedScaleFactor : scaleFactor;
+			pendingScaleFocusX = focusX;
+			pendingScaleFocusY = focusY;
+			if (scaleDebugCount == 1 || scaleDebugCount % 5 == 0) {
+				Log.i(TAG, "scale queued count=" + scaleDebugCount + " factor=" + scaleFactor
+						+ " pending=" + pendingScaleFactor + " focus=" + focusX + "," + focusY);
+			}
+			if (!scaleUpdateScheduled) {
+				scaleUpdateScheduled = true;
+				handler.postDelayed(applyPendingScaleRunnable, PINCH_UPDATE_INTERVAL_MS);
+			}
+		}
+	}
+
+	private void applyPendingScale() {
+		float scaleFactor;
+		float focusX;
+		float focusY;
+		synchronized (scaleLock) {
+			scaleFactor = pendingScaleFactor;
+			focusX = pendingScaleFocusX;
+			focusY = pendingScaleFocusY;
+			pendingScaleFactor = 1.0f;
+			scaleUpdateScheduled = false;
+		}
+		if (scaleFactor != 1.0f) {
+			Log.i(TAG, "scale applying factor=" + scaleFactor + " focus=" + focusX + "," + focusY);
+			handleScale(focusX, focusY, scaleFactor);
+		}
+		synchronized (scaleLock) {
+			if (pendingScaleFactor != 1.0f && !scaleUpdateScheduled) {
+				scaleUpdateScheduled = true;
+				handler.postDelayed(applyPendingScaleRunnable, PINCH_UPDATE_INTERVAL_MS);
+			}
 		}
 	}
 
@@ -296,11 +350,23 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 					y = visibleArea.centerY();
 				}
 			}
+			if (surfaceAdditionalWidth != 0 && surfaceContainer != null && visibleArea != null) {
+				x -= getMapLeftOffset();
+			}
 			OsmandMapTileView mapView = this.mapView;
+			Log.i(TAG, "scale handling factor=" + scaleFactor + " point=" + x + "," + y
+					+ " visible=" + visibleArea + " mapView=" + (mapView != null));
 			if (mapView != null && Float.isFinite(scaleFactor) && scaleFactor > 0 && scaleFactor != 1.0f) {
 				mapView.zoomAtPoint(x, y, scaleFactor);
 			}
 		}
+	}
+
+	private float getMapLeftOffset() {
+		if (surfaceAdditionalWidth == 0 || maxRatio <= minRatio) {
+			return 0.0f;
+		}
+		return -surfaceAdditionalWidth * ((maxRatio - cachedRatioX) / (maxRatio - minRatio));
 	}
 
 	/**
@@ -381,6 +447,8 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 				if (offscreenMapRendererView == null) {
 					MapRendererContext mapRendererContext = NativeCoreContext.getMapRendererContext();
 					if (mapRendererContext != null) {
+						RotatedTileBox savedViewport = mapView != null
+								? mapView.getCurrentRotatedTileBox().copy() : null;
 						MapRendererView mapRendererView = null;
 						if (mapView != null && mapView.getMapRenderer() != null) {
 							mapView.detachMapRenderer();
@@ -414,6 +482,16 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 							mapView.setMinAllowedElevationAngle(MIN_ALLOWED_ELEVATION_ANGLE_AA);
 							float elevationAngle = mapView.normalizeElevationAngle(getApp().getSettings().getLastKnownMapElevation());
 							mapView.setMapRenderer(offscreenMapRendererView, false);
+							if (savedViewport != null) {
+								mapView.setZoomWithFloatPart(savedViewport.getZoom(),
+										(float) savedViewport.getZoomFloatPart());
+								mapView.setTarget31(
+										MapUtils.get31TileNumberX(savedViewport.getLongitude()),
+										MapUtils.get31TileNumberY(savedViewport.getLatitude()), false);
+								Log.i(TAG, "synced OpenGL viewport lat=" + savedViewport.getLatitude()
+										+ " lon=" + savedViewport.getLongitude()
+										+ " zoom=" + savedViewport.getFullZoom());
+							}
 							mapView.setElevationAngle(elevationAngle);
 							mapView.addElevationListener(this);
 							getApp().getOsmandMap().getMapLayers().updateMapSource(mapView, null);
@@ -500,10 +578,7 @@ public final class SurfaceRenderer implements DefaultLifecycleObserver, MapRende
 			darkMode = newDarkMode;
 			drawSettings = new DrawSettings(newDarkMode, updateVectorRendering);
 			if (offscreenMapRendererView != null) {
-				float leftOffset = 0.0f;
-				if (surfaceAdditionalWidth != 0) {
-					leftOffset = -surfaceAdditionalWidth * ((maxRatio - cachedRatioX) / (maxRatio - minRatio));
-				}
+				float leftOffset = getMapLeftOffset();
 				canvas.drawBitmap(offscreenMapRendererView.getBitmap(), leftOffset, 0, null);
 			}
 			mapView.drawOverMap(canvas, tileBox, drawSettings);
