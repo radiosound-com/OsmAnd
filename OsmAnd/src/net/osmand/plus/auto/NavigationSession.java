@@ -311,6 +311,14 @@ public class NavigationSession extends Session implements NavigationListener, Os
 			getScreenManager().push(landingScreen);
 			return new RequestPermissionScreen(getCarContext(), locationPermissionGrantedCallback);
 		}
+		Uri navigationUri = ACTION_NAVIGATE.equals(action) ? intent.getData() : null;
+		if (navigationUri != null) {
+			// CarAppActivity creates the first session for a cold navigation launch.
+			// The framework installs the returned landing screen after this method
+			// returns, so process the destination on the next UI turn. Subsequent
+			// NAVIGATE intents already arrive through onNewIntent().
+			app.runInUIThread(() -> processNavigationIntent(navigationUri));
+		}
 		return landingScreen;
 	}
 
