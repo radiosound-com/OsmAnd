@@ -133,9 +133,21 @@ public final class RoutePreviewScreen extends BaseAndroidAutoScreen implements I
 
 		Distance distance = null;
 		int leftTimeSec = 0;
-		if (newRoute && routingHelper.isRoutePlanningMode()) {
-			distance = TripUtils.getDistance(app, routingHelper.getLeftDistance());
+		if (newRoute && routingHelper.isRouteCalculated()) {
+			int leftDistance = routingHelper.getLeftDistance();
 			leftTimeSec = routingHelper.getLeftTime();
+			// A car-app navigation intent can finish route planning before the
+			// route listener is notified. In that transition the remaining-route
+			// helpers may still be zero even though the calculated route is ready.
+			// Use the route totals as a safe fallback so the preview never remains
+			// an empty loading pane after a successful calculation.
+			if (leftDistance <= 0) {
+				leftDistance = routingHelper.getRoute().getWholeDistance();
+			}
+			if (leftTimeSec <= 0) {
+				leftTimeSec = Math.round(routingHelper.getRoute().getRoutingTime());
+			}
+			distance = TripUtils.getDistance(app, leftDistance);
 		}
 		if (distance != null && leftTimeSec > 0) {
 			List<Row> routeRows = new ArrayList<>();
