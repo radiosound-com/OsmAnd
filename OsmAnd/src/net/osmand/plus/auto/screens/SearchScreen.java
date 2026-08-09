@@ -115,7 +115,7 @@ public final class SearchScreen extends BaseSearchScreen implements DefaultLifec
 		});
 
 		builder.setHeaderAction(Action.BACK)
-				.setShowKeyboardByDefault(false)
+				.setShowKeyboardByDefault(true)
 				.setInitialSearchText(searchQuery == null ? "" : searchQuery);
 		if (!Algorithms.isEmpty(searchHint)) {
 			builder.setSearchHint(searchHint);

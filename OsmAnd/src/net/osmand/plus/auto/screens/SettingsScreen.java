@@ -5,6 +5,7 @@ import androidx.car.app.CarContext;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
+import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.SectionedItemList;
 import androidx.car.app.model.Template;
@@ -12,6 +13,7 @@ import androidx.car.app.model.Toggle;
 
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
+import net.osmand.plus.auto.NavigationSession;
 import net.osmand.plus.settings.backend.OsmandSettings;
 
 /**
@@ -30,6 +32,14 @@ public final class SettingsScreen extends BaseAndroidAutoScreen {
 	@NonNull
 	@Override
 	public Template getTemplate() {
+		NavigationSession navigationSession = ((OsmandApplication) getCarContext()
+				.getApplicationContext()).getCarNavigationSession();
+		if (navigationSession != null && navigationSession.isSettingsRestricted()) {
+			return new MessageTemplate.Builder("Park to change settings")
+					.setTitle(getCarContext().getString(R.string.shared_string_settings))
+					.setHeaderAction(Action.BACK)
+					.build();
+		}
 		ListTemplate.Builder templateBuilder = new ListTemplate.Builder();
 
 		// Create 2 sections with three settings each.

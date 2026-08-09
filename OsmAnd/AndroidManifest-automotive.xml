@@ -6,6 +6,8 @@
 		android:name="android.software.car.templates_host"
 		android:required="true" />
 
+	<uses-permission android:name="android.car.permission.CAR_DRIVING_STATE" />
+
 	<application>
 		<meta-data
 			android:name="com.android.automotive"

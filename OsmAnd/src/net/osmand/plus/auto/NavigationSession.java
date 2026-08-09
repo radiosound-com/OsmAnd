@@ -7,6 +7,9 @@ import static net.osmand.plus.OsmAndLocationProvider.NOT_SWITCH_TO_NETWORK_WHEN_
 import static net.osmand.plus.OsmAndLocationProvider.isRunningOnEmulator;
 
 import android.Manifest;
+import android.car.Car;
+import android.car.drivingstate.CarUxRestrictions;
+import android.car.drivingstate.CarUxRestrictionsManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -125,6 +128,10 @@ public class NavigationSession extends Session implements NavigationListener, Os
 	private long lastTimeGPSLocationFixed;
 
 	private CarContext carContext;
+	private Car car;
+	private CarUxRestrictionsManager carUxRestrictionsManager;
+	private volatile CarUxRestrictions carUxRestrictions;
+	private volatile boolean carUxRestrictionsReady;
 	private NavigationManager navigationManager;
 	private boolean carNavigationShouldBeActive; // it could set true before init navigationManager
 	private TripHelper tripHelper;
@@ -174,6 +181,70 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		return (OsmandApplication) getCarContext().getApplicationContext();
 	}
 
+	private void connectCarUxRestrictions() {
+		try {
+			Car.createCar(getCarContext(), null, Car.CAR_WAIT_TIMEOUT_WAIT_FOREVER,
+					(connectedCar, ready) -> {
+						if (!ready || connectedCar == null) {
+							return;
+						}
+						car = connectedCar;
+						carUxRestrictionsManager = (CarUxRestrictionsManager) connectedCar
+								.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE);
+						if (carUxRestrictionsManager != null) {
+							carUxRestrictionsManager.registerListener(this::onUxRestrictionsChanged);
+							onUxRestrictionsChanged(
+									carUxRestrictionsManager.getCurrentCarUxRestrictions());
+						}
+					});
+		} catch (RuntimeException error) {
+			LOG.warn("Unable to connect to CarUxRestrictionsManager", error);
+		}
+	}
+
+	private void onUxRestrictionsChanged(@Nullable CarUxRestrictions restrictions) {
+		carUxRestrictions = restrictions;
+		carUxRestrictionsReady = restrictions != null;
+		LOG.info("[DEBUG-UXR] restrictions=" + (restrictions == null
+				? "unavailable" : restrictions.getActiveRestrictions()));
+		getApp().runInUIThread(() -> {
+			if (isStateAtLeast(State.CREATED) && getScreenManager().getTop() != null) {
+				getScreenManager().getTop().invalidate();
+			}
+		});
+	}
+
+	private void disconnectCarUxRestrictions() {
+		CarUxRestrictionsManager restrictionsManager = carUxRestrictionsManager;
+		carUxRestrictionsManager = null;
+		if (restrictionsManager != null) {
+			try {
+				restrictionsManager.unregisterListener();
+			} catch (RuntimeException error) {
+				LOG.warn("Unable to unregister CarUxRestrictionsManager listener", error);
+			}
+		}
+		Car connectedCar = car;
+		car = null;
+		if (connectedCar != null) {
+			try {
+				connectedCar.disconnect();
+			} catch (RuntimeException error) {
+				LOG.warn("Unable to disconnect from car service", error);
+			}
+		}
+		carUxRestrictions = null;
+		carUxRestrictionsReady = false;
+	}
+
+	public boolean isSettingsRestricted() {
+		CarUxRestrictions restrictions = carUxRestrictions;
+		return !carUxRestrictionsReady || restrictions == null
+				|| (restrictions.isRequiresDistractionOptimization()
+				&& (restrictions.getActiveRestrictions()
+				& CarUxRestrictions.UX_RESTRICTIONS_NO_SETUP) != 0);
+	}
+
 	@Override
 	public void onCreate(@NonNull LifecycleOwner owner) {
 		OsmandApplication app = getApp();
@@ -185,6 +256,7 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		app.setCarNavigationSession(this);
 		app.getLocationProvider().addLocationListener(this);
 		setCarContext(getCarContext());
+		connectCarUxRestrictions();
 		requestLocationUpdates();
 		addLocationSourceListener();
 	}
@@ -257,6 +329,7 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		}
 		settings.simulateNavigationStartedFromAdb = false;
 
+		disconnectCarUxRestrictions();
 		clearCarContext();
 		app.getLocationProvider().removeLocationListener(this);
 		app.setCarNavigationSession(null);
@@ -286,8 +359,13 @@ public class NavigationSession extends Session implements NavigationListener, Os
 				.setIcon(new CarIcon.Builder(
 						IconCompat.createWithResource(getCarContext(), R.drawable.ic_action_settings_outlined))
 						.build())
-				.setOnClickListener(() -> getScreenManager()
-						.push(new SettingsScreen(getCarContext())))
+				.setOnClickListener(() -> {
+					if (isSettingsRestricted()) {
+						getApp().getToastHelper().showCarToast("Park to change settings", true);
+						return;
+					}
+					getScreenManager().push(new SettingsScreen(getCarContext()));
+				})
 				.build();
 
 		if (mapView != null) {
@@ -447,6 +525,23 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		if (routingHelper.isFollowingMode() && routingHelper.isRouteCalculated() && !carNavigationShouldBeActive) {
 			startCarNavigation();
 			updateCarNavigation(getApp().getLocationProvider().getLastKnownLocation());
+		}
+	}
+
+	/**
+	 * Opens active navigation when a route is running, resumes a paused route,
+	 * and returns to the route preview when a route has only been calculated.
+	 * Keeping the preview branch explicit prevents a planned route from
+	 * presenting a map-only navigation screen without turn or ETA data.
+	 */
+	public void resumeOrShowNavigation() {
+		if (routingHelper.isPauseNavigation()) {
+			routingHelper.resumeNavigation();
+			startNavigationScreen();
+		} else if (routingHelper.isFollowingMode()) {
+			startNavigationScreen();
+		} else {
+			showRoutePreview();
 		}
 	}
 

@@ -109,7 +109,10 @@ class LandingScreen(
     }
 
     private fun createContinueNavigationItem(): Item {
-        val title = app.getString(R.string.continue_navigation)
+        val routeIsActive = app.routingHelper.isFollowingMode || app.routingHelper.isPauseNavigation
+        val title = app.getString(
+            if (routeIsActive) R.string.continue_navigation else R.string.follow
+        )
         val icon = CarIcon.Builder(
             IconCompat.createWithResource(
                 app,
@@ -120,7 +123,7 @@ class LandingScreen(
             .setBrowsable(true)
             .setOnClickListener {
                 app.runInUIThread {
-	                app.carNavigationSession?.startNavigationScreen()
+	                app.carNavigationSession?.resumeOrShowNavigation()
                 }
             }
             .build()

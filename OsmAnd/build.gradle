@@ -246,6 +246,12 @@ tasks.register('copyOsmAndCoreWithJNI') {
 }
 
 dependencies {
+	// android.car is a platform API used only by the Automotive car-app session.
+	// Keep it compile-only so the platform supplies the implementation.
+	def androidCarJar = file("${android.sdkDirectory}/platforms/android-${osmand_compileSdk}/optional/android.car.jar")
+	if (androidCarJar.exists()) {
+		compileOnly files(androidCarJar)
+	}
 	openglImplementation fileTree(include:  ['QtAndroid.jar', 'QtAndroidBearer.jar', 'QtAndroidNetwork.jar'], dir: 'libs')
 	opengldebugImplementation fileTree(include:  ['QtAndroid.jar', 'QtAndroidBearer.jar', 'QtAndroidNetwork.jar'], dir: 'libs')
 
