@@ -59,13 +59,12 @@
 			<meta-data android:name="distractionOptimized" android:value="true" />
 		</activity>
 
-		<!-- App-drawer Nightly entry: a dedicated full-screen CarApp task. -->
+		<!-- App-drawer Nightly entry: a dedicated full-screen car-app task. -->
 		<activity
 			android:name="net.osmand.plus.auto.FullScreenCarAppActivity"
 			android:exported="true"
 			android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
-			android:excludeFromRecents="true"
-			android:noHistory="true"
+			android:launchMode="singleTask"
 			android:taskAffinity="net.osmand.dev.nightly.launcher"
 			android:label="@string/app_name">
 			<meta-data android:name="distractionOptimized" android:value="true" />
