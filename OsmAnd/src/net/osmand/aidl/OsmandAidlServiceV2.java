@@ -20,6 +20,7 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import net.osmand.PlatformUtil;
@@ -86,6 +87,8 @@ import net.osmand.aidlapi.mapmarker.UpdateMapMarkerParams;
 import net.osmand.aidlapi.mapwidget.AddMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.RemoveMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.UpdateMapWidgetParams;
+import net.osmand.aidlapi.mapwidget.AddWidgetGroupParams;
+import net.osmand.aidlapi.mapwidget.RemoveWidgetGroupParams;
 import net.osmand.aidlapi.navdrawer.NavDrawerFooterParams;
 import net.osmand.aidlapi.navdrawer.NavDrawerHeaderParams;
 import net.osmand.aidlapi.navdrawer.NavDrawerItem;
@@ -142,14 +145,15 @@ public class OsmandAidlServiceV2 extends Service implements AidlCallbackListener
 	}
 
 	@Nullable
-	private OsmandAidlApi getApi(String reason) {
-		LOG.info("Request AIDL API V2 for " + reason);
-		OsmandAidlApi api = getApp().getAidlApi();
+	private OsmandAidlApi getApi(@NonNull String reason) {
+		OsmandApplication app = getApp();
+		OsmandAidlApi api = app.getAidlApi();
 		String packName = getCallingAppPackName();
-		if (packName != null && !packName.equals(getApp().getPackageName()) && !api.isAppEnabled(packName)) {
-			return null;
-		}
-		return api;
+
+		boolean enabled = packName != null && (packName.equals(app.getPackageName()) || api.isAppEnabled(packName));
+		LOG.info("Request AIDL API V2 for " + reason + " from " + packName + " enabled: " + enabled);
+
+		return enabled ? api : null;
 	}
 
 	@Override
@@ -425,6 +429,30 @@ public class OsmandAidlServiceV2 extends Service implements AidlCallbackListener
 				OsmandAidlApi api = getApi("updateMapWidget");
 				String packName = getCallingAppPackName();
 				return params != null && api != null && api.updateMapWidget(packName, new AidlMapWidgetWrapper(params.getWidget()));
+			} catch (Exception e) {
+				handleException(e);
+				return false;
+			}
+		}
+
+		@Override
+		public boolean addWidgetGroup(AddWidgetGroupParams params) {
+			try {
+				OsmandAidlApi api = getApi("addWidgetGroup");
+				String packName = getCallingAppPackName();
+				return params != null && api != null && api.addWidgetGroup(packName, new AidlWidgetGroupWrapper(params.getGroup()));
+			} catch (Exception e) {
+				handleException(e);
+				return false;
+			}
+		}
+
+		@Override
+		public boolean removeWidgetGroup(RemoveWidgetGroupParams params) {
+			try {
+				OsmandAidlApi api = getApi("removeWidgetGroup");
+				String packName = getCallingAppPackName();
+				return params != null && api != null && api.removeWidgetGroup(packName, params.getId(), params.isRemoveWidgets());
 			} catch (Exception e) {
 				handleException(e);
 				return false;

@@ -6,15 +6,16 @@ public class FastRoutingState {
 
         // MissingMapsCalculator
         MIXED_MAPS_INTERMEDIATES,
-        MISSING_MAPS_INTERMEDIATES,
         MIXED_MAPS_AT_START_OR_END,
+        MISSING_MAPS_INTERMEDIATES,
         MISSING_MAPS_AT_START_OR_END,
 
         // HHRoutePlanner
         FAILED_WITH_MIXED_MAPS,
         FAILED_WITH_MISSING_MAPS,
         FAILED_NO_HH_ROUTING_DATA, // pedestrian profile, ancient maps, etc
-        FAILED_WITHOUT_MAP_ISSUES, // unsupported parameters, unusual geometry (Roma to Barcelona), etc
+        FAILED_NEED_MORE_LAND_MAPS, // unusual geometry, e.g. Istanbul to Chișinău without the Bulgaria map
+        FAILED_UNSUPPORTED_PARAMETERS, // highly likely unsupported routing parameters (too many recalculations)
 
         CANCELLED,
         SUCCESS
@@ -32,7 +33,8 @@ public class FastRoutingState {
         return status == Status.FAILED_WITH_MIXED_MAPS
                 || status == Status.FAILED_WITH_MISSING_MAPS
                 || status == Status.FAILED_NO_HH_ROUTING_DATA
-                || status == Status.FAILED_WITHOUT_MAP_ISSUES;
+                || status == Status.FAILED_NEED_MORE_LAND_MAPS
+                || status == Status.FAILED_UNSUPPORTED_PARAMETERS;
     }
 
     protected static Status get(int ordinal) {
@@ -47,13 +49,15 @@ public class FastRoutingState {
         return Math.max(status.ordinal(), old);
     }
 
-    protected static int fail(int old) {
+    protected static int fail(int old, boolean hasUnsupportedParameters) {
         if (isMixedMaps(old)) {
             return raise(old, Status.FAILED_WITH_MIXED_MAPS);
         } else if (isMissingMaps(old)) {
             return raise(old, Status.FAILED_WITH_MISSING_MAPS);
         } else {
-            return raise(old, Status.FAILED_WITHOUT_MAP_ISSUES);
+            return raise(old, hasUnsupportedParameters
+                    ? Status.FAILED_UNSUPPORTED_PARAMETERS
+                    : Status.FAILED_NEED_MORE_LAND_MAPS);
         }
     }
 
@@ -65,13 +69,13 @@ public class FastRoutingState {
         return isFailedStatus(get(ordinal));
     }
 
-    private static boolean isMixedMaps(int ordinal) {
+    protected static boolean isMixedMaps(int ordinal) {
         return ordinal == Status.FAILED_WITH_MIXED_MAPS.ordinal()
                 || ordinal == Status.MIXED_MAPS_INTERMEDIATES.ordinal()
                 || ordinal == Status.MIXED_MAPS_AT_START_OR_END.ordinal();
     }
 
-    private static boolean isMissingMaps(int ordinal) {
+    protected static boolean isMissingMaps(int ordinal) {
         return ordinal == Status.FAILED_WITH_MISSING_MAPS.ordinal()
                 || ordinal == Status.MISSING_MAPS_INTERMEDIATES.ordinal()
                 || ordinal == Status.MISSING_MAPS_AT_START_OR_END.ordinal();

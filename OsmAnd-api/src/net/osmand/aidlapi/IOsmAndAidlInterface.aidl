@@ -34,6 +34,9 @@ import net.osmand.aidlapi.mapwidget.AMapWidget;
 import net.osmand.aidlapi.mapwidget.AddMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.RemoveMapWidgetParams;
 import net.osmand.aidlapi.mapwidget.UpdateMapWidgetParams;
+import net.osmand.aidlapi.mapwidget.AWidgetGroup;
+import net.osmand.aidlapi.mapwidget.AddWidgetGroupParams;
+import net.osmand.aidlapi.mapwidget.RemoveWidgetGroupParams;
 
 import net.osmand.aidlapi.maplayer.point.AMapPoint;
 import net.osmand.aidlapi.maplayer.point.AddMapPointParams;
@@ -720,6 +723,7 @@ interface IOsmAndAidlInterface {
      * Method to copy files to OsmAnd part by part. For now supports only sqlitedb format.
      * Part size (bytearray) should not exceed 256k.
      *
+     * @param destinationDir (String) - relative target directory (can be empty)
      * @param fileName (String) - name of file
      * @param filePartData (byte[]) - parts of file, byte[] with size 256k or less.
      * @param startTime (long) - timestamp of copying start.
@@ -938,4 +942,18 @@ interface IOsmAndAidlInterface {
     long registerForLogcatMessages(in ALogcatListenerParams params, IOsmAndAidlCallback callback);
 
     boolean setZoomLimits(in ZoomLimitsParams params);
+
+    /**
+     * Register or update a widget group. Widgets assigned to this group via
+     * AMapWidget.setGroupId(id) are shown together in the "Configure screen".
+     * Calling it again with the same id updates the group's name/description/icons.
+     * Groups are transient and must be re-registered on each connection.
+     */
+    boolean addWidgetGroup(in AddWidgetGroupParams params);
+
+    /**
+     * Remove a widget group. By default its widgets are kept but become ungrouped;
+     * set RemoveWidgetGroupParams.removeWidgets = true to also remove the widgets.
+     */
+    boolean removeWidgetGroup(in RemoveWidgetGroupParams params);
 }

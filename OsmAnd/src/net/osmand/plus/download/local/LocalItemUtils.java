@@ -5,9 +5,9 @@ import static net.osmand.plus.download.local.LocalItemType.*;
 import static net.osmand.plus.mapmarkers.MapMarkersDbHelper.DB_NAME;
 import static net.osmand.plus.myplaces.favorites.FavouritesFileHelper.FAV_FILE_PREFIX;
 import static net.osmand.plus.myplaces.favorites.FavouritesFileHelper.LEGACY_FAV_FILE_PREFIX;
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.IMG_EXTENSION;
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.MPEG4_EXTENSION;
-import static net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin.THREEGP_EXTENSION;
+import static net.osmand.shared.media.MediaFileNameFormat.IMG_EXTENSION;
+import static net.osmand.shared.media.MediaFileNameFormat.MPEG4_EXTENSION;
+import static net.osmand.shared.media.MediaFileNameFormat.THREEGP_EXTENSION;
 import static net.osmand.plus.plugins.osmedit.helpers.OpenstreetmapsDbHelper.OPENSTREETMAP_DB_NAME;
 import static net.osmand.plus.plugins.osmedit.helpers.OsmBugsDbHelper.OSMBUGS_DB_NAME;
 import static net.osmand.plus.settings.backend.OsmandSettings.CUSTOM_SHARED_PREFERENCES_PREFIX;
@@ -19,10 +19,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import net.osmand.PlatformUtil;
-import net.osmand.plus.shared.SharedUtil;
 import net.osmand.map.ITileSource;
 import net.osmand.map.OsmandRegions;
 import net.osmand.map.TileSourceManager;
+import net.osmand.map.WorldRegion;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.download.SrtmDownloadItem;
@@ -38,6 +38,7 @@ import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.backend.preferences.CommonPreference;
 import net.osmand.plus.settings.enums.LocalSortMode;
+import net.osmand.plus.shared.SharedUtil;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.voice.JsMediaCommandPlayer;
@@ -49,14 +50,7 @@ import net.osmand.util.CollectionUtils;
 import org.apache.commons.logging.Log;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class LocalItemUtils {
 
@@ -204,7 +198,8 @@ public class LocalItemUtils {
 			return PROFILES;
 		} else if (path.contains(ROUTING_PROFILES_DIR) && name.endsWith(ROUTING_FILE_EXT)) {
 			return ROUTING;
-		} else if (name.endsWith(BINARY_TRAVEL_GUIDE_MAP_INDEX_EXT) || name.endsWith(BINARY_WIKI_MAP_INDEX_EXT)) {
+		} else if (name.endsWith(BINARY_TRAVEL_GUIDE_MAP_INDEX_EXT) || name.endsWith(BINARY_WIKI_MAP_INDEX_EXT)
+				|| name.endsWith(STAR_MAP_INDEX_EXT)) {
 			return WIKI_AND_TRAVEL_MAPS;
 		} else if (path.contains(LIVE_INDEX_DIR) && path.endsWith(BINARY_MAP_INDEX_EXT)) {
 			return LIVE_UPDATES;
@@ -272,14 +267,41 @@ public class LocalItemUtils {
 		String divider = ", ";
 		String name = FileNameTranslationHelper.getFileName(context, regions, fileName, divider, includingParent, reversed);
 		if (!Algorithms.isEmpty(name)) {
-			int index = name.indexOf(divider);
-			if (index != -1) {
-				int color = AndroidUtils.getColorFromAttr(context, android.R.attr.textColorSecondary);
-				return UiUtilities.createColorSpannable(name, color, name.substring(index));
-			}
-			return name;
+			return styleNameSecondaryPart(context, name);
 		}
 		return Algorithms.getFileNameWithoutExtension(fileName).replace('_', ' ');
+	}
+
+	@NonNull
+	public static CharSequence getGroupedItemName(@NonNull Context context, @NonNull LocalItem item) {
+		return styleNameSecondaryPart(context, getGroupedItemDisplayName(context, item));
+	}
+
+	@NonNull
+	public static String getGroupedItemDisplayName(@NonNull Context context, @NonNull LocalItem item) {
+		LocalItemType type = item.getType();
+		if (!type.isSortingByCountrySupported()) {
+			return getItemName(context, item, false).toString();
+		}
+
+		OsmandApplication app = (OsmandApplication) context.getApplicationContext();
+		OsmandRegions regions = app.getResourceManager().getOsmandRegions();
+		String baseName = FileNameTranslationHelper.getBasename(context, item.getFileName());
+		WorldRegion region = regions.getRegionDataByDownloadName(baseName);
+		if (region == null) {
+			return getItemName(context, item, false).toString();
+		}
+
+		String regionName = region.getLocaleName();
+		WorldRegion country = region.getCountryRegion();
+		WorldRegion parent = region.getSuperregion();
+		if (parent == null || parent.equals(country) || WorldRegion.WORLD.equals(parent.getRegionId())) {
+			return regionName;
+		}
+
+		boolean reversed = !getSortModePref(app, type).get().isCountryMode();
+		String parentName = parent.getLocaleName();
+		return reversed ? regionName + ", " + parentName : parentName + ", " + regionName;
 	}
 
 	@NonNull
@@ -318,6 +340,16 @@ public class LocalItemUtils {
 		String formattedSize = AndroidUtils.formatSize(context, calculateItemsSize(items));
 		String prefix = isSizeCalculated(items) ? "" : "≥ ";
 		return prefix + formattedSize;
+	}
+
+	@NonNull
+	private static CharSequence styleNameSecondaryPart(@NonNull Context context, @NonNull String name) {
+		int index = name.indexOf(", ");
+		if (index != -1) {
+			int color = AndroidUtils.getColorFromAttr(context, android.R.attr.textColorSecondary);
+			return UiUtilities.createColorSpannable(name, color, name.substring(index));
+		}
+		return name;
 	}
 
 	public static boolean isSizeCalculated(@NonNull Collection<BaseLocalItem> items) {

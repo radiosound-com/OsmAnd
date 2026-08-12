@@ -20,7 +20,6 @@ import androidx.appcompat.widget.AppCompatCheckedTextView;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.Preference;
 
-import net.osmand.data.PointDescription;
 import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.base.MapViewTrackingUtilities;
@@ -33,6 +32,7 @@ import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.OsmandSettings;
 import net.osmand.plus.settings.bottomsheets.DistanceDuringNavigationBottomSheet;
 import net.osmand.plus.settings.controllers.CompassModeDialogController;
+import net.osmand.plus.settings.coordinates.CoordinateFormatFormatter;
 import net.osmand.plus.settings.enums.DrivingRegion;
 import net.osmand.plus.settings.enums.CompassMode;
 import net.osmand.plus.settings.enums.ScreenOrientation;
@@ -49,6 +49,7 @@ import net.osmand.plus.settings.preferences.ListPreferenceEx;
 import net.osmand.plus.settings.preferences.SwitchPreferenceEx;
 import net.osmand.plus.utils.UiUtilities;
 import net.osmand.util.Algorithms;
+import net.osmand.shared.routing.GeneralRouterProfile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -202,9 +203,9 @@ public class GeneralProfileSettingsFragment extends BaseSettingsFragment {
 	}
 
 	private void setupCoordinatesFormatPref() {
-		Preference coordinatesFormat = findPreference(settings.COORDINATES_FORMAT.getId());
+		Preference coordinatesFormat = findPreference(CoordinatesFormatFragment.SETTINGS_PREF_ID);
 		coordinatesFormat.setIcon(getActiveIcon(R.drawable.ic_action_coordinates_widget));
-		coordinatesFormat.setSummary(PointDescription.formatToHumanString(app, settings.COORDINATES_FORMAT.getModeValue(getSelectedAppMode())));
+		coordinatesFormat.setSummary(CoordinateFormatFormatter.getPrimaryTitle(app, getSelectedAppMode()));
 	}
 
 	private void setupAngularUnitsPref() {
@@ -255,12 +256,12 @@ public class GeneralProfileSettingsFragment extends BaseSettingsFragment {
 		if (routeService == RouteService.OSMAND) {
 			GeneralRouter router = app.getRouter(mode);
 			if (router != null) {
-				GeneralRouter.GeneralRouterProfile routerProfile = router.getProfile();
+				GeneralRouterProfile routerProfile = router.getProfile();
 				hidePref = routerProfile == null
-						|| routerProfile == GeneralRouter.GeneralRouterProfile.PEDESTRIAN
-						|| routerProfile == GeneralRouter.GeneralRouterProfile.BICYCLE
-						|| routerProfile == GeneralRouter.GeneralRouterProfile.HORSEBACKRIDING
-						|| routerProfile == GeneralRouter.GeneralRouterProfile.SKI;
+						|| routerProfile == GeneralRouterProfile.PEDESTRIAN
+						|| routerProfile == GeneralRouterProfile.BICYCLE
+						|| routerProfile == GeneralRouterProfile.HORSEBACKRIDING
+						|| routerProfile == GeneralRouterProfile.SKI;
 			}
 		}
 		ListPreferenceEx unitOfVolumePref = requirePreference(settings.UNIT_OF_VOLUME.getId());

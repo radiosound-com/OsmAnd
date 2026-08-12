@@ -64,6 +64,7 @@ import net.osmand.plus.feedback.AnalyticsHelper;
 import net.osmand.plus.feedback.FeedbackHelper;
 import net.osmand.plus.feedback.RateUsHelper;
 import net.osmand.plus.feedback.RateUsState;
+import net.osmand.plus.gallery.GalleryHelper;
 import net.osmand.plus.help.HelpArticlesHelper;
 import net.osmand.plus.helpers.*;
 import net.osmand.plus.importfiles.ImportHelper;
@@ -87,6 +88,7 @@ import net.osmand.plus.plugins.osmedit.oauth.OsmOAuthHelper;
 import net.osmand.plus.plugins.rastermaps.DownloadTilesHelper;
 import net.osmand.plus.plugins.weather.OfflineForecastHelper;
 import net.osmand.plus.plugins.weather.WeatherHelper;
+import net.osmand.plus.settings.coordinates.CoordinateFormatHelper;
 import net.osmand.plus.poi.PoiFiltersHelper;
 import net.osmand.plus.quickaction.MapButtonsHelper;
 import net.osmand.plus.render.RendererRegistry;
@@ -115,6 +117,7 @@ import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.views.OsmandMap;
 import net.osmand.plus.views.PointImageUtils;
 import net.osmand.plus.views.corenative.NativeCoreContext;
+import net.osmand.plus.views.mapwidgets.configure.appearance.PanelAppearanceSettingsManager;
 import net.osmand.plus.views.mapwidgets.utils.AverageGlideComputer;
 import net.osmand.plus.views.mapwidgets.utils.AverageSpeedComputer;
 import net.osmand.plus.voice.CommandPlayer;
@@ -161,6 +164,8 @@ public class OsmandApplication extends MultiDexApplication {
 	private final UiUtilities iconsCache = new UiUtilities(this);
 	private final LocaleHelper localeHelper = new LocaleHelper(this);
 	private final ToastHelper toastHelper = new ToastHelper(this);
+	private final CoordinateFormatHelper coordinateFormatHelper = new CoordinateFormatHelper(this);
+	PanelAppearanceSettingsManager panelAppearanceSettingsManager;
 
 	// start variables
 	ResourceManager resourceManager;
@@ -189,7 +194,7 @@ public class OsmandApplication extends MultiDexApplication {
 	DownloadIndexesThread downloadIndexesThread;
 	AvoidRoadsHelper avoidRoadsHelper;
 	BRouterServiceConnection bRouterServiceConnection;
-	OsmandRegions regions;
+	OsmandRegions regions = new OsmandRegions(false);
 	GeocodingLookupService geocodingLookupService;
 	QuickSearchHelper searchUICore;
 	SearchHistoryHelper searchHistoryHelper;
@@ -224,6 +229,7 @@ public class OsmandApplication extends MultiDexApplication {
 	ExplorePlacesOnlineProvider explorePlacesProvider;
 	HelpArticlesHelper helpArticlesHelper;
 	ClickableWayHelper clickableWayHelper;
+	GalleryHelper galleryHelper;
 
 	private final Map<String, Builder> customRoutingConfigs = new ConcurrentHashMap<>();
 	private File externalStorageDirectory;
@@ -297,7 +303,7 @@ public class OsmandApplication extends MultiDexApplication {
 		}
 
 		SearchUICore.setDebugMode(PluginsHelper.isDevelopment());
-		BackupHelper.DEBUG = true;//PluginsHelper.isDevelopment();
+		BackupHelper.DEBUG = PluginsHelper.isDevelopment();
 	}
 
 	public boolean isPlusVersionInApp() {
@@ -415,7 +421,7 @@ public class OsmandApplication extends MultiDexApplication {
 		if (source == LocationSource.GOOGLE_PLAY_SERVICES) {
 			return new GmsLocationServiceHelper(this);
 		}
-		return new AndroidApiLocationServiceHelper(this);
+		return Version.isHMDBuild() ? new HMDLocationServiceHelper(this) : new AndroidApiLocationServiceHelper(this);
 	}
 
 	public void setAppCustomization(OsmAndAppCustomization appCustomization) {
@@ -435,9 +441,17 @@ public class OsmandApplication extends MultiDexApplication {
 		return settings;
 	}
 
-	public void setSettings(OsmandSettings settings) {
+	public synchronized void setSettings(OsmandSettings settings) {
 		this.settings = settings;
+		if (panelAppearanceSettingsManager != null) {
+			panelAppearanceSettingsManager.updateSettings(settings);
+		}
 		PluginsHelper.initPlugins(this);
+	}
+
+	@NonNull
+	public PanelAppearanceSettingsManager getPanelAppearanceSettingsManager() {
+		return panelAppearanceSettingsManager;
 	}
 
 	public SavingTrackHelper getSavingTrackHelper() {
@@ -559,6 +573,7 @@ public class OsmandApplication extends MultiDexApplication {
 		if (preferredLocale != null && !Objects.equals(newConfig.locale.getLanguage(), preferredLocale.getLanguage())) {
 			super.onConfigurationChanged(newConfig);
 			Locale.setDefault(preferredLocale);
+			localeHelper.checkPreferredLocale();
 		} else {
 			super.onConfigurationChanged(newConfig);
 		}
@@ -681,6 +696,11 @@ public class OsmandApplication extends MultiDexApplication {
 	}
 
 	@NonNull
+	public CoordinateFormatHelper getCoordinateFormatHelper() {
+		return coordinateFormatHelper;
+	}
+
+	@NonNull
 	public DialogManager getDialogManager() {
 		return dialogManager;
 	}
@@ -723,6 +743,11 @@ public class OsmandApplication extends MultiDexApplication {
 	@NonNull
 	public HelpArticlesHelper getHelpArticlesHelper() {
 		return helpArticlesHelper;
+	}
+
+	@NonNull
+	public GalleryHelper getGalleryHelper() {
+		return galleryHelper;
 	}
 
 	public CommandPlayer getPlayer() {
@@ -842,7 +867,7 @@ public class OsmandApplication extends MultiDexApplication {
 	}
 
 	public void startApplication() {
-		feedbackHelper.setExceptionHandler();
+		feedbackHelper.setupExceptionHandler();
 		if (!NetworkUtils.hasProxy() && settings.isProxyEnabled()) {
 			try {
 				NetworkUtils.setProxy(settings.PROXY_HOST.get(), settings.PROXY_PORT.get());
@@ -1111,15 +1136,17 @@ public class OsmandApplication extends MultiDexApplication {
 		intent.putExtra(NavigationService.USAGE_INTENT, usageIntent);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			runInUIThread(() -> {
+				if (!OsmAndLocationProvider.isLocationPermissionAvailable(this)) {
+					LOG.info(">>>> Failed APP startForegroundService = " + usageIntent + " {no location permission}");
+					return;
+				}
 				try {
-					if (isAppInForeground() && OsmAndLocationProvider.isLocationPermissionAvailable(this)) {
-						LOG.info(">>>> APP startForegroundService = " + usageIntent);
-						context.startForegroundService(intent);
-					} else {
-						LOG.info(">>>> Failed APP startForegroundService = " + usageIntent + "{foreground " + isAppInForeground() + ", permissions " + OsmAndLocationProvider.isLocationPermissionAvailable(this));
-					}
-				} catch (IllegalStateException e) {
-					LOG.error("Failed to start foreground service: " + e.getMessage(), e);
+					LOG.info(">>>> APP startForegroundService = " + usageIntent + " {foreground " + isAppInForeground() + "}");
+					context.startForegroundService(intent);
+				} catch (Exception e) {
+					// e.g. ForegroundServiceStartNotAllowedException (Android 12+) when the service
+					// cannot be started from the background; do not fail silently in the log only.
+					LOG.error("Failed to start foreground service (usageIntent=" + usageIntent + "): " + e.getMessage(), e);
 				}
 			});
 		} else {

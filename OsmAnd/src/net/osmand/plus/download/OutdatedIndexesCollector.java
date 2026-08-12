@@ -88,6 +88,10 @@ public class OutdatedIndexesCollector {
 				IndexConstants.BINARY_TRAVEL_GUIDE_MAP_INDEX_EXT, indexActivatedFileNames);
 		listWithAlternatives(dateFormat, app.getAppPath(IndexConstants.WEATHER_FORECAST_DIR),
 				IndexConstants.WEATHER_EXT, indexActivatedFileNames);
+		listWithAlternatives(dateFormat, app.getAppPath(IndexConstants.ASTRO_DIR),
+				IndexConstants.STAR_MAP_INDEX_EXT, indexActivatedFileNames);
+		listWithAlternatives(dateFormat, app.getAppPath(IndexConstants.GEOTIFF_DIR),
+				IndexConstants.TIF_EXT, indexActivatedFileNames);
 
 		listWithAlternatives(dateFormat, app.getAppPath(""), IndexConstants.EXTRA_EXT, indexFileNames);
 		listWithAlternatives(dateFormat, app.getAppPath(IndexConstants.TILES_INDEX_DIR), IndexConstants.SQLITE_EXT,
@@ -98,6 +102,8 @@ public class OutdatedIndexesCollector {
 				IndexConstants.BINARY_TRAVEL_GUIDE_MAP_INDEX_EXT, indexFileNames);
 		listWithAlternatives(dateFormat, app.getAppPath(IndexConstants.GEOTIFF_DIR),
 				IndexConstants.TIF_EXT, indexFileNames);
+		listWithAlternatives(dateFormat, app.getAppPath(IndexConstants.ASTRO_DIR),
+				IndexConstants.STAR_MAP_INDEX_EXT, indexFileNames);
 
 		app.getResourceManager().getBackupIndexes(indexFileNames);
 		this.indexFileNames = indexFileNames;

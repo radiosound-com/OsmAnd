@@ -10,10 +10,12 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.activities.MapActivity
-import net.osmand.plus.mapcontextmenu.builders.cards.ImageCard
-import net.osmand.plus.mapcontextmenu.gallery.GalleryGridAdapter
-import net.osmand.plus.mapcontextmenu.gallery.GalleryGridFragment
-import net.osmand.plus.mapcontextmenu.gallery.GalleryGridItemDecorator
+import net.osmand.plus.gallery.contract.IGalleryActionListener
+import net.osmand.plus.gallery.contract.IGalleryListener
+import net.osmand.plus.gallery.model.GalleryItem
+import net.osmand.plus.gallery.ui.GalleryGridAdapter
+import net.osmand.plus.gallery.ui.GalleryGridItemDecorator
+import net.osmand.plus.gallery.ui.holders.MediaHolderType
 import net.osmand.plus.utils.ColorUtilities
 import net.osmand.plus.widgets.dialogbutton.DialogButton
 import net.osmand.util.Algorithms
@@ -22,14 +24,16 @@ class AstroGalleryCardViewHolder(
 	itemView: View,
 	private val app: OsmandApplication,
 	private val mapActivity: MapActivity,
-	private val listener: GalleryGridAdapter.ImageCardListener,
+	private val galleryListener: IGalleryListener,
+	private val actionListener: IGalleryActionListener,
+	private val onActionButtonClick: (String?) -> Unit,
 	private val onToggle: (String) -> Unit
 ) : RecyclerView.ViewHolder(itemView) {
 
 	private val recyclerView: RecyclerView = itemView.findViewById(R.id.gallery_grid_recycler_view)
 	private val progressBar: LinearProgressIndicator = itemView.findViewById(R.id.progress_bar)
 	private val contentContainer: LinearLayout = itemView.findViewById(R.id.content_container)
-	private val viewAllButton: DialogButton = itemView.findViewById(R.id.view_all)
+	private val viewAllButton: DialogButton = itemView.findViewById(R.id.primary_action_button)
 	private val collapseButton: View = itemView.findViewById(R.id.collapse_button)
 	private val arrowCard: ImageView = itemView.findViewById(R.id.arrow_icon)
 	private var galleryGridAdapter: GalleryGridAdapter? = null
@@ -51,14 +55,14 @@ class AstroGalleryCardViewHolder(
 		}
 
 		when (val state = item.state) {
-			is AstroGalleryCardState.Collapsed -> showCollapsed()
-			is AstroGalleryCardState.Loading -> showLoading()
-			is AstroGalleryCardState.Ready -> showCards(state.cards)
+			is AstroGalleryState.Collapsed -> showCollapsed()
+			is AstroGalleryState.Loading -> showLoading()
+			is AstroGalleryState.Ready -> showGalleryItems(state.galleryItems)
 		}
 
 		arrowCard.setImageDrawable(
 			app.uiUtilities.getIcon(
-				if (item.state is AstroGalleryCardState.Collapsed) {
+				if (item.state is AstroGalleryState.Collapsed) {
 					R.drawable.ic_action_arrow_down
 				} else {
 					R.drawable.ic_action_arrow_up
@@ -73,18 +77,18 @@ class AstroGalleryCardViewHolder(
 		contentContainer.visibility = View.GONE
 	}
 
-	private fun showCards(cards: List<Any?>) {
+	private fun showGalleryItems(galleryItems: List<GalleryItem>) {
 		contentContainer.visibility = View.VISIBLE
-		val items: MutableList<Any?> = ArrayList()
+		val items: MutableList<GalleryItem> = ArrayList()
 
-		val containsImage = cards.any { it is ImageCard }
+		val containsImage = galleryItems.any { it is GalleryItem.Media }
 		val connectionAvailable = app.getSettings().isInternetConnectionAvailable
 
-		if (connectionAvailable || !Algorithms.isEmpty(cards)) {
-			items.addAll(cards)
+		if (connectionAvailable || !Algorithms.isEmpty(galleryItems)) {
+			items.addAll(galleryItems)
 			viewAllButton.visibility = if (containsImage) View.VISIBLE else View.GONE
 		} else {
-			items.add(GalleryGridAdapter.NO_INTERNET_TYPE)
+			items.add(GalleryItem.NoInternet)
 			viewAllButton.visibility = View.GONE
 		}
 		galleryGridAdapter?.setItems(items)
@@ -106,7 +110,7 @@ class AstroGalleryCardViewHolder(
 				return if (
 					adapter != null &&
 					position in 0 until adapter.itemCount &&
-					adapter.getItemViewType(position) == GalleryGridAdapter.IMAGE_TYPE
+					adapter.isRegularMediaItemOnPosition(position)
 				) {
 					1
 				} else {
@@ -118,24 +122,32 @@ class AstroGalleryCardViewHolder(
 	}
 
 	private fun ensureRecyclerInitialized(nightMode: Boolean) {
-		if (galleryGridAdapter != null && adapterNightMode == nightMode) {
-			return
-		}
-		galleryGridAdapter = GalleryGridAdapter(mapActivity, listener, null, true, nightMode)
+		if (galleryGridAdapter != null && adapterNightMode == nightMode) return
+
+		val registry = app.galleryHelper.loadStateRegistry
+		galleryGridAdapter = GalleryGridAdapter(
+			mapActivity = mapActivity,
+			onMediaClicked = galleryListener::onMediaItemClicked,
+			onReloadMediaItems = galleryListener::onReloadMediaItems,
+			onActionClicked = actionListener::handleGalleryAction,
+			mediaHolderType = { position -> if (position == 0) MediaHolderType.MAIN else MediaHolderType.STANDARD },
+			resolveResizableImageSize = null,
+			isLoadFailed = registry::isFailed,
+			onLoadFailed = registry::markFailed,
+			nightMode = nightMode
+		)
 		adapterNightMode = nightMode
 		recyclerView.layoutManager = getGridLayoutManager()
 		if (recyclerView.itemDecorationCount == 0) {
 			recyclerView.addItemDecoration(GalleryGridItemDecorator(app))
 		}
 		recyclerView.adapter = galleryGridAdapter
-		recyclerView.itemAnimator = galleryGridAdapter?.animator
+		recyclerView.itemAnimator = galleryGridAdapter?.getAnimator()
 	}
 
 	private fun setupViewAllButton() {
 		viewAllButton.setTitleId(R.string.shared_string_show_all)
-		viewAllButton.setOnClickListener {
-			GalleryGridFragment.showInstance(mapActivity, showAllTitle)
-		}
+		viewAllButton.setOnClickListener { onActionButtonClick(showAllTitle) }
 	}
 
 	private fun applyViewAllStyle(nightMode: Boolean) {

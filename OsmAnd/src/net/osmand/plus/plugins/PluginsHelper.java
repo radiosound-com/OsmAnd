@@ -34,8 +34,7 @@ import net.osmand.plus.dashboard.tools.DashFragmentData;
 import net.osmand.plus.download.IndexItem;
 import net.osmand.plus.keyevent.assignment.KeyAssignment;
 import net.osmand.plus.keyevent.commands.KeyEventCommand;
-import net.osmand.plus.mapcontextmenu.gallery.ImageCardsHolder;
-import net.osmand.plus.mapcontextmenu.gallery.tasks.GetImageCardsTask.GetImageCardsListener;
+import net.osmand.plus.gallery.online.OnlinePhotosHolder;
 import net.osmand.plus.myplaces.MyPlacesActivity;
 import net.osmand.plus.plugins.OsmandPlugin.PluginInstallListener;
 import net.osmand.plus.plugins.accessibility.AccessibilityPlugin;
@@ -620,24 +619,6 @@ public class PluginsHelper {
 		}
 	}
 
-	public static void onGetImageCardsStart() {
-		for (OsmandPlugin plugin : getEnabledPlugins()) {
-			GetImageCardsListener listener = plugin.getImageCardsListener();
-			if (listener != null) {
-				listener.onTaskStarted();
-			}
-		}
-	}
-
-	public static void onGetImageCardsFinished(@NonNull ImageCardsHolder cardsHolder) {
-		for (OsmandPlugin plugin : getEnabledPlugins()) {
-			GetImageCardsListener listener = plugin.getImageCardsListener();
-			if (listener != null) {
-				listener.onFinish(cardsHolder);
-			}
-		}
-	}
-
 	@Nullable
 	public static MapWidget createMapWidget(@NonNull MapActivity mapActivity, @NonNull WidgetType widgetType, @Nullable String customId, @Nullable WidgetsPanel widgetsPanel) {
 		for (OsmandPlugin plugin : getEnabledPlugins()) {
@@ -771,14 +752,16 @@ public class PluginsHelper {
 	}
 
 	/**
-	 * @param holder      an object to collect results
-	 * @param imageObject json object that contains data for create an image card
-	 * @return 'true' if an image card was created
+	 * Lets enabled plugins handle a context-menu gallery JSON object.
+	 *
+	 * @param holder      an object used to collect gallery items
+	 * @param imageObject JSON object that may describe a media item or gallery action
+	 * @return true if the object was recognized and handled by a plugin, even if no item was added
 	 */
-	public static boolean createImageCardForJson(@NonNull ImageCardsHolder holder,
-	                                             @NonNull JSONObject imageObject) {
+	public static boolean addContextMenuGalleryItem(@NonNull OnlinePhotosHolder holder,
+	                                                @NonNull JSONObject imageObject) {
 		for (OsmandPlugin plugin : getEnabledPlugins()) {
-			if (plugin.createContextMenuImageCard(holder, imageObject)) {
+			if (plugin.addContextMenuGalleryItem(holder, imageObject)) {
 				return true;
 			}
 		}

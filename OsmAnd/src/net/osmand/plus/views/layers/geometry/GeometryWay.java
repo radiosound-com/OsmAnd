@@ -255,7 +255,7 @@ public abstract class GeometryWay<T extends CommonGeometryWayContext, D extends 
 					double prevLon = locationProvider.getLongitude(previous);
 					double lat = locationProvider.getLatitude(i);
 					double lon = locationProvider.getLongitude(i);
-					dist = MapUtils.getDistance(prevLat, prevLon, lat, lon);
+					dist = getSegmentDistance(prevLat, prevLon, lat, lon);
 				}
 				if (!previousVisible && !ignorePrevious) {
 					if (previous != -1 && !isPreviousPointFarAway(locationProvider, previous, i)) {
@@ -396,35 +396,33 @@ public abstract class GeometryWay<T extends CommonGeometryWayContext, D extends 
 		for (List<DrawPathData31> pathsDataList : pathsData31Cache) {
 			for (DrawPathData31 pathData : pathsDataList) {
 				boolean hasIndex = false;
-				for (Integer index : pathData.indexes) {
+				for (int index : pathData.indexes) {
 					if (index <= startLocationIndex) {
 						hasIndex = true;
 						break;
 					}
 				}
 				if (hasIndex) {
-					List<Integer> indexes = pathData.indexes;
-					for (int i = 0; i < indexes.size() - 1; i++) {
-						Integer index = indexes.get(i);
+					int[] indexes = pathData.indexes;
+					for (int i = 0; i < indexes.length - 1; i++) {
+						int index = indexes[i];
 						if (index < startLocationIndex) {
-							lastX31 = pathData.tx.get(i);
-							lastY31 = pathData.ty.get(i);
+							lastX31 = pathData.tx[i];
+							lastY31 = pathData.ty[i];
 							if (passedLineId != pathData.lineId) {
-								passedDist = pathData.distances.get(i);
+								passedDist = pathData.distances[i];
 							} else {
-								passedDist += i > 0 ? pathData.distances.get(i) : lastPathDist;
+								passedDist += i > 0 ? pathData.distances[i] : lastPathDist;
 							}
 							passedLineId = pathData.lineId;
-							lastPathDist = pathData.distances.get(pathData.distances.size() - 1);
+							lastPathDist = pathData.distances[pathData.distances.length - 1];
 						}
 					}
 				}
 			}
 		}
 		if (lastProjection != null && lastX31 != 0 && lastY31 != 0) {
-			passedDist += (float) MapUtils.measuredDist31(
-					MapUtils.get31TileNumberX(lastProjection.getLongitude()),
-					MapUtils.get31TileNumberY(lastProjection.getLatitude()), lastX31, lastY31);
+			passedDist += (float) getProjectionDistance(lastProjection, lastX31, lastY31);
 		}
 
 		if (passedLineId > 0) {
@@ -450,6 +448,16 @@ public abstract class GeometryWay<T extends CommonGeometryWayContext, D extends 
 
 	protected boolean shouldDrawArrows() {
 		return true;
+	}
+
+	protected double getSegmentDistance(double lat1, double lon1, double lat2, double lon2) {
+		return MapUtils.getDistance(lat1, lon1, lat2, lon2);
+	}
+
+	protected double getProjectionDistance(@NonNull Location projection, int x31, int y31) {
+		return MapUtils.measuredDist31(
+				MapUtils.get31TileNumberX(projection.getLongitude()),
+				MapUtils.get31TileNumberY(projection.getLatitude()), x31, y31);
 	}
 
 	public void drawRouteSegment(@NonNull RotatedTileBox tb, @Nullable Canvas canvas,

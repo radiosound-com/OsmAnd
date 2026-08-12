@@ -128,7 +128,6 @@
     <string name="poi_traffic_calming_table">Veľký spomaľovač</string>
     <string name="poi_traffic_signals">Semafor</string>
     <string name="poi_car_repair">Autoservis</string>
-    <string name="poi_service_tyres">Pneuservis;Pneumatiky</string>
     <string name="poi_vehicle_inspection">Kontrola vozidla (technická/emisná)</string>
     <string name="poi_car_wash">Autoumyváreň</string>
     <string name="poi_fuel">Benzínová pumpa;Čerpacia stanica</string>
@@ -269,7 +268,7 @@
     <string name="poi_ngo">Nezisková organizácia</string>
     <string name="poi_townhall">Radnica/Obecný úrad</string>
     <string name="poi_employment_agency">Personálna agentúra</string>
-    <string name="poi_research">Výskumný ústav</string>
+    <string name="poi_research">Výskumná organizácia</string>
     <string name="poi_it">Informačné technológie</string>
     <string name="poi_newspaper">Redakcia novín</string>
     <string name="poi_architect">Architektonická kancelária</string>
@@ -936,7 +935,7 @@
     <string name="poi_access_private">Prístup len so súhlasom vlastníka</string>
     <string name="poi_access_no">Žiadny prístup</string>
     <string name="poi_access_destination">Prístup len k cieľu</string>
-    <string name="poi_access_permissive">Prístup povolený</string>
+    <string name="poi_access_permissive">Prístup dovolený</string>
     <string name="poi_access_customers">Prístup len pre zákazníkov</string>
     <string name="poi_access_delivery">Prístup len pre zásobovanie</string>
     <string name="poi_access_agricultural">Prístup na poľnohospodárske účely</string>
@@ -1224,7 +1223,7 @@
     <string name="poi_aerialway_bicycle_summer">Povolené len v lete</string>
     <string name="poi_aerialway_access_entry">Iba vstup</string>
     <string name="poi_aerialway_access_exit">Iba výstup</string>
-    <string name="poi_aerialway_access_both">Vstup aj výstup</string>
+    <string name="poi_aerialway_access_both">Vchod aj výstup</string>
     <string name="poi_aerialway_summer_access_entry">Letný prístup: len vstup</string>
     <string name="poi_aerialway_summer_access_exit">Letný prístup: len výstup</string>
     <string name="poi_aerialway_summer_access_both">Letný prístup: vstup aj výstup</string>
@@ -1468,7 +1467,7 @@
     <string name="poi_toilets_wheelchair_yes">Prístup na toalety s vozíkom: áno</string>
     <string name="poi_toilets_wheelchair_no">Prístup na toalety s vozíkom: nie</string>
     <string name="poi_toilets_access_customers">Prístup na toalety: zákazníci</string>
-    <string name="poi_toilets_access_permissive">Prístup na toalety: povolený</string>
+    <string name="poi_toilets_access_permissive">Prístup na toalety: dovolený</string>
     <string name="poi_toilets_access_community">Prístup na toalety: komunita</string>
     <string name="poi_toilets_access_public">Prístup na toalety: verejnosť</string>
     <string name="poi_diaper_yes">Stôl na výmenu plienok</string>
@@ -2099,7 +2098,7 @@
     <string name="poi_resource_beryl">Beryl</string>
     <string name="poi_resource_bismuth">Bizmut</string>
     <string name="poi_resource_chromite">Chromit</string>
-    <string name="poi_resource_clay">Hlina</string>
+    <string name="poi_resource_clay">Íl</string>
     <string name="poi_resource_coal">Uhlie</string>
     <string name="poi_resource_copper">Meď</string>
     <string name="poi_resource_diamond">Diamanty</string>
@@ -2324,7 +2323,6 @@
     <string name="poi_training_art">Výcvik: umenie</string>
     <string name="poi_training_cooking">Výcvik: varenie</string>
     <string name="poi_training_computer">Výcvik: práca s počítačom</string>
-    <string name="poi_training_yoga">Výcvik: joga</string>
     <string name="poi_training_martial_art">Výcvik: bojové umenie</string>
     <string name="poi_training_aviation">Výcvik: letectvo</string>
     <string name="poi_training_hairdressing">Výcvik: kaderníctvo</string>
@@ -2966,7 +2964,6 @@
     <string name="poi_xmas_location">Vianoce: poloha</string>
     <string name="poi_xmas_url">Vianoce: webstránka</string>
     <string name="poi_cuisine_empanada">Empanada</string>
-    <string name="poi_cuisine_crepes">Francúzske palacinky</string>
     <string name="poi_cuisine_udon">Udon</string>
     <string name="poi_cuisine_bubble_tea">Bublinkový čaj (Bubble tea)</string>
     <string name="poi_cuisine_sub">Prekrojený sendvič (sub)</string>
@@ -3053,7 +3050,7 @@
     <string name="poi_government_transportation">Dopravná inštitúcia</string>
     <string name="poi_government_legislative">Legislatívna inštitúcia</string>
     <string name="poi_vhf">Kanál VHF</string>
-    <string name="poi_surface_metal_grid">Kovová mriežka</string>
+    <string name="poi_surface_metal_grid">Povrch: kovová mriežka</string>
     <string name="poi_location_underground">Umiestnenie: pod zemou</string>
     <string name="poi_location_underwater">Umiestnenie: pod vodou</string>
     <string name="poi_location_overground">Umiestnenie: nad zemou</string>
@@ -3211,7 +3208,7 @@
     <string name="poi_tower_construction_concealed">Konštrukcia: Skrytá/maskovaná</string>
     <string name="poi_gorge">Tiesňava</string>
     <string name="poi_mountain_area">Horská oblasť</string>
-    <string name="poi_surface_tartan">Tartan</string>
+    <string name="poi_surface_tartan">Povrch: Tartan</string>
     <string name="poi_agrarian">Poľnohospodárske potreby</string>
     <string name="poi_service_vehicle_muffler_yes">Tlmiče zvuku</string>
     <string name="poi_service_vehicle_alignment_yes">Geometria kolies</string>
@@ -3324,7 +3321,7 @@
     <string name="poi_boat_kayak_rental_no">Kajaky: nie</string>
     <string name="poi_boat_canoe_rental_yes">Kanoe: áno</string>
     <string name="poi_boat_canoe_rental_no">Kanoe: nie</string>
-    <string name="poi_surface_clay">Antuka</string>
+    <string name="poi_surface_clay">Povrch: Antuka</string>
     <string name="poi_generator_source_biomass">Zdroj energie: biomasa</string>
     <string name="poi_snowmobile_filter">Prístup snežným skútrom</string>
     <string name="poi_access_bus">Prístup autobusom verejnej dopravy</string>
@@ -3522,7 +3519,7 @@
     <string name="poi_sms">SMS</string>
     <string name="poi_climbing_crag_filter">Lezecká stena</string>
     <string name="poi_cellar_entrance">Vstup do pivnice</string>
-    <string name="poi_surface_artificial_turf">Umelý trávnik</string>
+    <string name="poi_surface_artificial_turf">Povrch: umelý trávnik</string>
     <string name="poi_atm_yes">Bankomat: áno</string>
     <string name="poi_healthcare_speciality_naturopathy">Prírodná medicína</string>
     <string name="poi_healthcare_speciality_manual_therapy">Manuálna terapia</string>
@@ -3620,7 +3617,7 @@
     <string name="poi_sms_yes">Áno;SMS</string>
     <string name="poi_taxi_office">Kancelária taxislužby</string>
     <string name="poi_cash_withdrawal_postbank">Postbank</string>
-    <string name="poi_surface_decoturf">DecoTurf</string>
+    <string name="poi_surface_decoturf">Povrch: DecoTurf</string>
     <string name="poi_healthcare_speciality_podiatry">Podológia</string>
     <string name="poi_health_specialty_obstetrics_caesarean_section_no">Zdravotná špecializácia: pôrodníctvo (cisársky rez): nie</string>
     <string name="poi_health_specialty_social_paediatrics_no">Zdravotná špecializácia: sociálna pediatria: nie</string>
@@ -4014,7 +4011,7 @@
     <string name="poi_post_office_opening_hours">Otváracie hodiny doručovacej služby</string>
     <string name="poi_telecommunication">Telekomunikácie</string>
     <string name="poi_books_adults">Dospelí</string>
-    <string name="poi_access_permit">Potrebné povolenie</string>
+    <string name="poi_access_permit">Potrebné bežne získateľné povolenie</string>
     <string name="poi_parcel_locker">Skrinky na balíky</string>
     <string name="poi_museum_type">Predmet zbierky múzea</string>
     <string name="poi_post_office_type">Typ</string>
@@ -4419,7 +4416,7 @@
     <string name="poi_recycling_toys">Hračky</string>
     <string name="poi_waste_organic">Prírodné materiály</string>
     <string name="poi_waste_dog_excrement">Psie výkaly</string>
-    <string name="poi_surface_chipseal">Kamienky na asfalte</string>
+    <string name="poi_surface_chipseal">Povrch: kamienky na asfalte</string>
     <string name="poi_recycling_pens">Perá</string>
     <string name="poi_recycling_electrical_appliances">Elektrické spotrebiče</string>
     <string name="poi_recycling_coffee_capsules">Kávové kapsuly</string>
@@ -4508,7 +4505,7 @@
     <string name="poi_osmwiki">Populárne miesta (Wikipédia)</string>
     <string name="poi_network_foot">Sieť trás (turistika)</string>
     <string name="poi_network_cycling">Sieť trás (cyklistika)</string>
-    <string name="poi_cafe_yes">Áno</string>
+    <string name="poi_cafe_yes">Kaviareň: Áno</string>
     <string name="poi_piste_type">Typ zjazdovky</string>
     <string name="poi_access_notes">Poznámky o prístupe</string>
     <string name="poi_contact_website">Webová stránka</string>
@@ -4556,7 +4553,6 @@
     <string name="poi_network_lhn">Lokálne trasy pre kone (LHN)</string>
     <string name="poi_hazard_falling_rocks">Padajúce skaly</string>
     <string name="poi_hazard_yes">Nebezpečenstvo</string>
-    <string name="poi_hazard_additional_yes">Nebezpečenstvo</string>
     <string name="poi_hazard_contamination">Zamorenie</string>
     <string name="poi_travel_agency">Cestovná kancelária</string>
     <string name="poi_steps">Schody</string>
@@ -4741,4 +4737,27 @@
     <string name="poi_episcopal_church">Episkopálny kostol</string>
     <string name="poi_denomination_slavic">Slovanské</string>
     <string name="poi_denomination_celtic">Keltské</string>
+    <string name="poi_water_lake">Jazero</string>
+    <string name="poi_osmand_access_main_tag">Prístup</string>
+    <string name="poi_hang_gliding">Závesné lietanie</string>
+    <string name="poi_healthcare_speciality_pain_control">Potláčanie bolesti</string>
+    <string name="poi_healthcare_speciality_first_aid_training">Výcvik prvej pomoci</string>
+    <string name="poi_healthcare_speciality_sleep">Spánok</string>
+    <string name="poi_healthcare_speciality_proctology">Proktológia</string>
+    <string name="poi_healthcare_speciality_audiology">Audiológia</string>
+    <string name="poi_healthcare_speciality_autism">Autismus</string>
+    <string name="poi_healthcare_speciality_chronic">Chronické choroby</string>
+    <string name="poi_healthcare_speciality_microbiology">Mikrobiológia</string>
+    <string name="poi_healthcare_speciality_venereology">Venerológia</string>
+    <string name="poi_healthcare_speciality_obstetrics">Pôrodníctvo</string>
+    <string name="poi_healthcare_speciality_denturist">Výroba snímateľných zubných protéz</string>
+    <string name="poi_healthcare_speciality_pedorthist">Zdravotná úprava obuvi</string>
+    <string name="poi_healthcare_speciality_kinesitherapy">Pohybová terapia</string>
+    <string name="poi_healthcare_speciality_primary_care">Základná starostlivosť</string>
+    <string name="poi_healthcare_speciality_otorhinolaryngology">Otorinolaryngológia</string>
+    <string name="poi_healthcare_speciality_implantology">Implantológia</string>
+    <string name="poi_healthcare_speciality_neonatology">Neonatológia</string>
+    <string name="poi_cemt">CEMT klasifikácia splavnosti</string>
+    <string name="poi_water_type_filter">Typ vody</string>
+    <string name="poi_surface_laterite">Povrch: laterit</string>
 </resources>

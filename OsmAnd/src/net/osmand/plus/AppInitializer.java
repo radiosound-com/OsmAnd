@@ -42,6 +42,7 @@ import net.osmand.plus.download.local.LocalItem;
 import net.osmand.plus.exploreplaces.ExplorePlacesOnlineProvider;
 import net.osmand.plus.feedback.AnalyticsHelper;
 import net.osmand.plus.feedback.FeedbackHelper;
+import net.osmand.plus.gallery.GalleryHelper;
 import net.osmand.plus.help.HelpArticlesHelper;
 import net.osmand.plus.helpers.*;
 import net.osmand.plus.importfiles.ImportHelper;
@@ -52,7 +53,6 @@ import net.osmand.plus.keyevent.KeyEventHelper;
 import net.osmand.plus.mapmarkers.MapMarkersDbHelper;
 import net.osmand.plus.mapmarkers.MapMarkersHelper;
 import net.osmand.plus.myplaces.favorites.FavouritesHelper;
-import net.osmand.plus.myplaces.favorites.dialogs.FavoriteSortModesHelper;
 import net.osmand.plus.notifications.NotificationHelper;
 import net.osmand.plus.onlinerouting.OnlineRoutingHelper;
 import net.osmand.plus.plugins.PluginsHelper;
@@ -85,6 +85,7 @@ import net.osmand.plus.track.helpers.GpxSelectionHelper;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.views.OsmandMap;
 import net.osmand.plus.views.corenative.NativeCoreContext;
+import net.osmand.plus.views.mapwidgets.configure.appearance.PanelAppearanceSettingsManager;
 import net.osmand.plus.views.mapwidgets.utils.AverageGlideComputer;
 import net.osmand.plus.views.mapwidgets.utils.AverageSpeedComputer;
 import net.osmand.plus.voice.CommandPlayer;
@@ -236,8 +237,8 @@ public class AppInitializer implements IProgress {
 	public boolean checkPreviousRunsForExceptions(Activity activity, boolean writeFileSize) {
 		initVariables();
 		long size = activity.getPreferences(Context.MODE_PRIVATE).getLong(EXCEPTION_FILE_SIZE, 0);
-		File file = app.getAppPath(FeedbackHelper.EXCEPTION_PATH);
-		if (file.exists() && file.length() > 0) {
+		File file = app.getFeedbackHelper().getCrashLog();
+		if (file != null) {
 			if (size != file.length() && !isFirstTime()) {
 				if (writeFileSize) {
 					activity.getPreferences(Context.MODE_PRIVATE).edit().putLong(EXCEPTION_FILE_SIZE, file.length()).commit();
@@ -257,6 +258,33 @@ public class AppInitializer implements IProgress {
 				InputStream stream = OsmandRegions.class.getResourceAsStream("regions.ocbf");
 				Algorithms.streamCopy(stream, new FileOutputStream(file));
 			}
+			app.regions.setTranslator(new RegionTranslation() {
+
+				@Override
+				public String getTranslation(String id) {
+					if (WorldRegion.AFRICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_africa);
+					} else if (WorldRegion.AUSTRALIA_AND_OCEANIA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_oceania);
+					} else if (WorldRegion.ASIA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_asia);
+					} else if (WorldRegion.CENTRAL_AMERICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_central_america);
+					} else if (WorldRegion.EUROPE_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_europe);
+					} else if (WorldRegion.RUSSIA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_russia);
+					} else if (WorldRegion.NORTH_AMERICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_north_america);
+					} else if (WorldRegion.SOUTH_AMERICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_south_america);
+					} else if (WorldRegion.ANTARCTICA_REGION_ID.equals(id)) {
+						return app.getString(R.string.index_name_antarctica);
+					}
+					return null;
+				}
+			});
+			app.regions.setLocale(app.getLanguage(), app.getLocaleHelper().getCountry());
 			app.regions.prepareFile(file.getAbsolutePath());
 			PlatformUtil.setOsmandRegions(app.regions);
 		} catch (Exception e) {
@@ -301,6 +329,8 @@ public class AppInitializer implements IProgress {
 		app.importHelper = startupInit(new ImportHelper(app), ImportHelper.class);
 		app.backupHelper = startupInit(new BackupHelper(app), BackupHelper.class);
 		app.inAppPurchaseHelper = startupInit(new InAppPurchaseHelperImpl(app), InAppPurchaseHelperImpl.class);
+		app.panelAppearanceSettingsManager = startupInit(
+				new PanelAppearanceSettingsManager(app, settings), PanelAppearanceSettingsManager.class);
 		app.poiTypes = startupInit(MapPoiTypes.getDefaultNoInit(), MapPoiTypes.class);
 		app.transportRoutingHelper = startupInit(new TransportRoutingHelper(app), TransportRoutingHelper.class);
 		app.routingHelper = startupInit(new RoutingHelper(app), RoutingHelper.class);
@@ -320,10 +350,6 @@ public class AppInitializer implements IProgress {
 		app.favoritesHelper = startupInit(new FavouritesHelper(app), FavouritesHelper.class);
 		app.waypointHelper = startupInit(new WaypointHelper(app), WaypointHelper.class);
 		app.aidlApi = startupInit(new OsmandAidlApi(app), OsmandAidlApi.class);
-
-		app.regions = startupInit(new OsmandRegions(), OsmandRegions.class);
-		updateRegionVars();
-
 		app.poiFilters = startupInit(new PoiFiltersHelper(app), PoiFiltersHelper.class);
 		app.rendererRegistry = startupInit(new RendererRegistry(app), RendererRegistry.class);
 		app.geocodingLookupService = startupInit(new GeocodingLookupService(app), GeocodingLookupService.class);
@@ -361,6 +387,7 @@ public class AppInitializer implements IProgress {
 		app.helpArticlesHelper = startupInit(new HelpArticlesHelper(app), HelpArticlesHelper.class);
 		app.clickableWayHelper = startupInit(new ClickableWayHelper(app), ClickableWayHelper.class);
 		app.autoBackupHelper = startupInit(new AutoBackupHelper(app), AutoBackupHelper.class);
+		app.galleryHelper = startupInit(new GalleryHelper(app), GalleryHelper.class);
 		initOpeningHoursParser();
 	}
 
@@ -369,43 +396,22 @@ public class AppInitializer implements IProgress {
 		OpeningHoursParser.setAdditionalString("is_open", app.getString(R.string.poi_dialog_opening_hours));
 		OpeningHoursParser.setAdditionalString("is_open_24_7", app.getString(R.string.shared_string_is_open_24_7));
 		OpeningHoursParser.setAdditionalString("will_open_at", app.getString(R.string.will_open_at));
+		OpeningHoursParser.setAdditionalString("will_open_at_short", app.getString(R.string.open_from_short));
 		OpeningHoursParser.setAdditionalString("open_from", app.getString(R.string.open_from));
+		OpeningHoursParser.setAdditionalString("open_from_short", app.getString(R.string.open_from_short));
 		OpeningHoursParser.setAdditionalString("will_close_at", app.getString(R.string.will_close_at));
+		OpeningHoursParser.setAdditionalString("will_close_at_short", app.getString(R.string.open_till_short));
 		OpeningHoursParser.setAdditionalString("open_till", app.getString(R.string.open_till));
+		OpeningHoursParser.setAdditionalString("open_till_short", app.getString(R.string.open_till_short));
 		OpeningHoursParser.setAdditionalString("will_open_tomorrow_at", app.getString(R.string.will_open_tomorrow_at));
+		OpeningHoursParser.setAdditionalString("will_open_tomorrow_at_short", app.getString(R.string.tomorrow));
 		OpeningHoursParser.setAdditionalString("will_open_on", app.getString(R.string.will_open_on));
+		OpeningHoursParser.setAdditionalString("will_open_on_short", app.getString(R.string.open_from_short));
 	}
 
-	private void updateRegionVars() {
-		app.regions.setTranslator(new RegionTranslation() {
+	private void updateRegionVars(OsmandRegions regions) {
 
-			@Override
-			public String getTranslation(String id) {
-				if (WorldRegion.AFRICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_africa);
-				} else if (WorldRegion.AUSTRALIA_AND_OCEANIA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_oceania);
-				} else if (WorldRegion.ASIA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_asia);
-				} else if (WorldRegion.CENTRAL_AMERICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_central_america);
-				} else if (WorldRegion.EUROPE_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_europe);
-				} else if (WorldRegion.RUSSIA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_russia);
-				} else if (WorldRegion.NORTH_AMERICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_north_america);
-				} else if (WorldRegion.SOUTH_AMERICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_south_america);
-				} else if (WorldRegion.ANTARCTICA_REGION_ID.equals(id)) {
-					return app.getString(R.string.index_name_antarctica);
-				}
-				return null;
-			}
-		});
-		app.regions.setLocale(app.getLanguage(), app.getLocaleHelper().getCountry());
 	}
-
 
 	private <T> T startupInit(T object, Class<T> class1) {
 		long t = System.currentTimeMillis();
@@ -582,14 +588,22 @@ public class AppInitializer implements IProgress {
 					continue;
 				}
 				int updateFrequencyOrd = preferenceUpdateFrequency(fileName, settings).get();
-				UpdateFrequency updateFrequency = UpdateFrequency.values()[updateFrequencyOrd];
+				UpdateFrequency[] updateFrequencies = UpdateFrequency.values();
+				if (updateFrequencyOrd < 0 || updateFrequencyOrd >= updateFrequencies.length) {
+					continue;
+				}
+				UpdateFrequency updateFrequency = updateFrequencies[updateFrequencyOrd];
 				long lastCheck = preferenceLastSuccessfulUpdateCheck(fileName, settings).get();
 
 				if (System.currentTimeMillis() - lastCheck > updateFrequency.intervalMillis * 2) {
 					runLiveUpdate(app, fileName, false, null);
 					PendingIntent alarmIntent = getPendingIntent(app, fileName);
 					int timeOfDayOrd = preferenceTimeOfDayToUpdate(fileName, settings).get();
-					TimeOfDay timeOfDayToUpdate = TimeOfDay.values()[timeOfDayOrd];
+					TimeOfDay[] timeOfDayValues = TimeOfDay.values();
+					if (timeOfDayOrd < 0 || timeOfDayOrd >= timeOfDayValues.length) {
+						continue;
+					}
+					TimeOfDay timeOfDayToUpdate = timeOfDayValues[timeOfDayOrd];
 					setAlarmForPendingIntent(alarmIntent, manager, updateFrequency, timeOfDayToUpdate);
 				}
 			}

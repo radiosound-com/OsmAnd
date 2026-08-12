@@ -17,6 +17,7 @@ import static net.osmand.shared.gpx.GpxParameter.FILE_LAST_MODIFIED_TIME;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -214,6 +215,7 @@ public class OsmandAidlApi {
 	private static final String AIDL_LOCK_STATE = "lock_state";
 	private static final String AIDL_EXIT_APP = "exit_app";
 	private static final String AIDL_EXIT_APP_RESTART = "exit_app_restart";
+	private static final String AIDL_AUTH_TOKEN = "aidl_auth_token";
 
 	private static final ApplicationMode DEFAULT_PROFILE = ApplicationMode.CAR;
 
@@ -1169,6 +1171,26 @@ public class OsmandAidlApi {
 		return false;
 	}
 
+	boolean addWidgetGroup(String packName, AidlWidgetGroupWrapper group) {
+		if (group != null) {
+			ConnectedApp connectedApp = connectedApps.get(packName);
+			if (connectedApp != null) {
+				return connectedApp.addWidgetGroup(group);
+			}
+		}
+		return false;
+	}
+
+	boolean removeWidgetGroup(String packName, String groupId, boolean removeWidgets) {
+		if (!Algorithms.isEmpty(groupId)) {
+			ConnectedApp connectedApp = connectedApps.get(packName);
+			if (connectedApp != null) {
+				return connectedApp.removeWidgetGroup(groupId, removeWidgets);
+			}
+		}
+		return false;
+	}
+
 	boolean addMapLayer(String packName, AidlMapLayerWrapper layer) {
 		if (layer != null) {
 			ConnectedApp connectedApp = connectedApps.get(packName);
@@ -1946,7 +1968,7 @@ public class OsmandAidlApi {
 	public boolean isAppEnabled(@NonNull String pack) {
 		ConnectedApp connectedApp = connectedApps.get(pack);
 		if (connectedApp == null) {
-			connectedApp = new ConnectedApp(app, pack, true);
+			connectedApp = new ConnectedApp(app, pack, false);
 			connectedApps.put(pack, connectedApp);
 			saveConnectedApps();
 		}
@@ -2292,11 +2314,24 @@ public class OsmandAidlApi {
 
 	private final Map<String, FileCopyInfo> copyFilesCache = new ConcurrentHashMap<>();
 
+
+	public static void addAuthToken(@NonNull Context context, @NonNull Bundle bundle) {
+		PendingIntent token = PendingIntent.getActivity(context, 0, new Intent(),  PendingIntent.FLAG_IMMUTABLE);
+		bundle.putParcelable(AIDL_AUTH_TOKEN, token);
+	}
+
+	public static boolean hasAuthToken(@NonNull Context context, @NonNull Bundle bundle) {
+		PendingIntent token = AndroidUtils.getParcelable(bundle, AIDL_AUTH_TOKEN, PendingIntent.class);
+		return token != null && context.getPackageName().equals(token.getCreatorPackage());
+	}
+
 	public boolean importProfile(Uri profileUri, String latestChanges, int version) {
 		if (profileUri != null) {
 			Bundle bundle = new Bundle();
 			bundle.putString(SettingsHelper.SETTINGS_LATEST_CHANGES_KEY, latestChanges);
 			bundle.putInt(SettingsHelper.SETTINGS_VERSION_KEY, version);
+
+			addAuthToken(app, bundle);
 
 			MapActivity.launchMapActivityMoveToTop(app, null, profileUri, bundle);
 			return true;
@@ -2313,6 +2348,8 @@ public class OsmandAidlApi {
 			bundle.putBoolean(SILENT_IMPORT_KEY, silent);
 			bundle.putString(SettingsHelper.SETTINGS_LATEST_CHANGES_KEY, latestChanges);
 			bundle.putInt(SettingsHelper.SETTINGS_VERSION_KEY, version);
+
+			addAuthToken(app, bundle);
 
 			MapActivity.launchMapActivityMoveToTop(app, null, profileUri, bundle);
 			return true;
@@ -2531,7 +2568,7 @@ public class OsmandAidlApi {
 	}
 
 	int copyFile(String fileName, byte[] filePartData, long startTime, boolean done) {
-		if (Algorithms.isEmpty(fileName) || filePartData == null) {
+		if (filePartData == null || hasUnsafeCopyPath(null, fileName)) {
 			return COPY_FILE_PARAMS_ERROR;
 		}
 		if (filePartData.length > COPY_FILE_PART_SIZE_LIMIT) {
@@ -2545,7 +2582,7 @@ public class OsmandAidlApi {
 	}
 
 	int copyFileV2(String destinationDir, String fileName, byte[] filePartData, long startTime, boolean done) {
-		if (Algorithms.isEmpty(fileName) || filePartData == null) {
+		if (filePartData == null || hasUnsafeCopyPath(destinationDir, fileName)) {
 			return COPY_FILE_PARAMS_ERROR;
 		}
 		if (filePartData.length > COPY_FILE_PART_SIZE_LIMIT) {
@@ -2628,6 +2665,14 @@ public class OsmandAidlApi {
 		}
 		copyFilesCache.remove(fileName);
 		return res;
+	}
+
+	private static boolean hasUnsafeCopyPath(@Nullable String destinationDir, @Nullable String fileName) {
+		if (Algorithms.isEmpty(fileName) || fileName.contains("/") || fileName.equals("..")) {
+			return true;
+		}
+		return Algorithms.isNotEmpty(destinationDir) && (destinationDir.contains("/../")
+				|| destinationDir.startsWith("../") || destinationDir.endsWith("/..") || destinationDir.equals(".."));
 	}
 
 	private static class GpxAsyncLoaderTask extends AsyncTask<Void, Void, GpxFile> {

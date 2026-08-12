@@ -54,6 +54,8 @@ import net.osmand.plus.auto.screens.RequestPermissionScreen.LocationPermissionCh
 import net.osmand.plus.helpers.LocationCallback;
 import net.osmand.plus.helpers.LocationServiceHelper;
 import net.osmand.plus.helpers.RestoreNavigationHelper;
+import net.osmand.plus.plugins.PluginsHelper;
+import net.osmand.plus.plugins.development.OsmandDevelopmentPlugin;
 import net.osmand.plus.routing.RouteCalculationProgressListener;
 import net.osmand.plus.search.history.HistoryEntry;
 import net.osmand.plus.helpers.TargetPoint;
@@ -68,6 +70,7 @@ import net.osmand.plus.settings.enums.LocationSource;
 import net.osmand.plus.simulation.OsmAndLocationSimulation;
 import net.osmand.plus.track.helpers.GpxUiHelper;
 import net.osmand.plus.views.OsmandMapTileView;
+import net.osmand.plus.views.layers.GPXLayer;
 import net.osmand.router.FastRoutingState;
 import net.osmand.search.core.ObjectType;
 import net.osmand.search.core.SearchResult;
@@ -276,6 +279,7 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		if (!appMode.isAppModeDerivedFromCar()) {
 			ApplicationMode carMode = ApplicationMode.getFirstCarMode(app);
 			if (carMode != null) {
+				originalAppMode = appMode;
 				settings.setApplicationMode(carMode, false);
 			}
 		}
@@ -290,6 +294,8 @@ public class NavigationSession extends Session implements NavigationListener, Os
 			checkAppInitialization(new RestoreNavigationHelper(app, null));
 		}
 		app.getRoutingHelper().addCalculationProgressListener(this);
+		GPXLayer gpxLayer = app.getOsmandMap().getMapLayers().getGpxLayer();
+		gpxLayer.setInvalidated(true);
 	}
 
 	@Override
@@ -750,7 +756,7 @@ public class NavigationSession extends Session implements NavigationListener, Os
 			this.navigationManager.setNavigationManagerCallback(new NavigationManagerCallback() {
 				@Override
 				public void onStopNavigation() {
-					if (!routingHelper.isRouteCalculated() || !routingHelper.isFollowingMode()) {
+					if (routingHelper.isRouteCalculated() && routingHelper.isFollowingMode()) {
 						getApp().stopNavigation();
 					}
 					carNavigationShouldBeActive = false;
@@ -837,7 +843,12 @@ public class NavigationSession extends Session implements NavigationListener, Os
 					}
 					Trip trip = tripHelper.buildTrip(currentLocation, density);
 					if (carNavigationShouldBeActive) {
-						navigationManager.updateTrip(trip);
+						try {
+							navigationManager.updateTrip(trip);
+						} catch (IllegalStateException e) {
+							carNavigationShouldBeActive = false;
+							LOG.warn("NavigationManager is no longer in started state, stop sending trip updates", e);
+						}
 					}
 
 					List<Destination> destinations = null;
@@ -884,13 +895,24 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		}
 	}
 
-	public void showMissingMapsScreen(boolean allowContinue) {
+	public void showMissingMapsScreen() {
+		showMissingMapsScreen(lastFastRoutingComplication != null
+				? getCurrentMissingMapsScreenType(lastFastRoutingComplication)
+				: MissingMapsScreenType.MISSING_MAPS);
+	}
+
+	public void showMissingMapsScreen(@NonNull MissingMapsScreenType screenType) {
 		CarContext carContext = getCarContext();
 		if (carContext != null) {
 			Screen topScreen = getScreenManager().getTop();
-			if (!(topScreen instanceof MissingMapsScreen)) {
-				carContext.getCarService(ScreenManager.class).push(new MissingMapsScreen(carContext, allowContinue));
+			if (topScreen instanceof MissingMapsScreen missingMapsScreen) {
+				if (missingMapsScreen.getScreenType() == screenType) {
+					return;
+				}
+				missingMapsScreen.updateScreenType(screenType);
+				return;
 			}
+			carContext.getCarService(ScreenManager.class).push(new MissingMapsScreen(carContext, screenType));
 		}
 	}
 
@@ -921,10 +943,19 @@ public class NavigationSession extends Session implements NavigationListener, Os
 						|| FastRoutingState.isCancelledStatus(complication)) {
 					closeMissingMapsScreen();
 				} else {
-					showMissingMapsScreen(!FastRoutingState.isFailedStatus(complication));
+					showMissingMapsScreen(getCurrentMissingMapsScreenType(complication));
 				}
 			}
 		}
+	}
+
+	@NonNull
+	private MissingMapsScreenType getCurrentMissingMapsScreenType(@NonNull FastRoutingState.Status status) {
+		return switch (status) {
+			case FAILED_WITH_MISSING_MAPS -> MissingMapsScreenType.POSSIBLE_MISSING_MAPS;
+			case MISSING_MAPS_INTERMEDIATES, MISSING_MAPS_AT_START_OR_END -> MissingMapsScreenType.MISSING_MAPS;
+			default -> MissingMapsScreenType.MISSING_MAPS;
+		};
 	}
 
 	@Override

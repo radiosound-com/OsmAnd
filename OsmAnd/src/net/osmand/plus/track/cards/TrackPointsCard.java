@@ -25,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
@@ -94,6 +95,7 @@ public class TrackPointsCard extends MapBaseCard implements OnChildClickListener
 	private Location lastLocation;
 	private float lastHeading;
 	private boolean locationDataUpdateAllowed = true;
+	private LatLon selectedWptLatLon = null;
 
 	public TrackPointsCard(@NonNull MapActivity mapActivity,
 	                       @NonNull TrackDisplayHelper displayHelper,
@@ -567,17 +569,16 @@ public class TrackPointsCard extends MapBaseCard implements OnChildClickListener
 				});
 			}
 			ImageView goToLocationIcon = row.findViewById(R.id.go_to_point_location_icon);
-			View goToLocationView = row.findViewById(R.id.go_to_point_location);
 			boolean isTrackPoint = GpxDisplayItemType.TRACK_POINTS == group.getType();
-			AndroidUiHelper.updateVisibility(goToLocationView, isTrackPoint);
-			goToLocationView.setOnClickListener((v) -> {
-				OsmandMapTileView mapView = mapActivity.getMapView();
+			AndroidUiHelper.updateVisibility(goToLocationIcon, isTrackPoint);
+			goToLocationIcon.setOnClickListener((v) -> {
 				WptPt wpt = gpxItem.locationStart;
 				double lon = wpt.getLon();
 				double lat = wpt.getLat();
-				mapView.getAnimatedDraggingThread().startMoving(lat, lon, mapView.getZoom(), mapView.getZoomFloatPart());
+				selectedWptLatLon = new LatLon(lat, lon);
+				notifyButtonPressed(OptionsCard.CENTER_MAP_ON_LOCATION_BUTTON_INDEX);
 			});
-			int iconColor = ColorUtilities.getSecondaryIconColorId(nightMode);
+			int iconColor = ColorUtilities.getDefaultIconColorId(nightMode);
 			goToLocationIcon.setImageDrawable(getColoredIcon(R.drawable.ic_action_marker_dark, iconColor));
 			goToLocationIcon.setContentDescription(String.format(app.getString(R.string.show_something_on_map), gpxItem.name));
 			if (isTrackPoint) {
@@ -672,5 +673,10 @@ public class TrackPointsCard extends MapBaseCard implements OnChildClickListener
 			expandAllGroups();
 			onSelectedGroupChanged();
 		}
+	}
+
+	@Nullable
+	public LatLon getSelectedWptLatLon() {
+		return selectedWptLatLon;
 	}
 }

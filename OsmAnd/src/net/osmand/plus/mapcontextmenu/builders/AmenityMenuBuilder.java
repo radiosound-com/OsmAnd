@@ -27,6 +27,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import net.osmand.PlatformUtil;
+import net.osmand.data.AdditionalInfoBundle;
 import net.osmand.data.Amenity;
 import net.osmand.data.LatLon;
 import net.osmand.osm.edit.OSMSettings;
@@ -80,7 +81,7 @@ public class AmenityMenuBuilder extends MenuBuilder {
 	public void build(@NonNull ViewGroup view, @Nullable Object object) {
 		extensions = amenity.getAmenityExtensions(app.getPoiTypes(), false);
 		setCustomOnlinePhotosPosition(extensions.containsKey(WIKIDATA));
-		infoBundle = new AdditionalInfoBundle(app, extensions);
+		infoBundle = new AdditionalInfoBundle(app.getPoiTypes(), extensions);
 
 		super.build(view, object);
 	}
@@ -304,13 +305,15 @@ public class AmenityMenuBuilder extends MenuBuilder {
 					.setOrder(1000)
 					.build();
 
+			int safePosition = Math.min(position, group.getChildCount());
 			View amenitiesRow = createRowContainer(context, NEAREST_WIKI_KEY);
 
-			firstRow = position == 0 || isDividerAtPosition(group, position - 1);
+			firstRow = safePosition == 0 || isDividerAtPosition(group, safePosition - 1);
 			amenityUIHelper.buildAmenityRow(amenitiesRow, wikiInfo);
-			group.addView(amenitiesRow, position);
+			group.addView(amenitiesRow, safePosition);
 
-			buildNearestRowDividerIfMissing(group, position);
+			buildNearestRowDividerIfMissing(group, safePosition);
+			requestMenuRelayout(group);
 		});
 	}
 
@@ -345,11 +348,13 @@ public class AmenityMenuBuilder extends MenuBuilder {
 			group.addView(amenitiesRow, insertIndex);
 
 			buildNearestRowDividerIfMissing(group, insertIndex);
+			requestMenuRelayout(group);
 		});
 	}
 
 	@Override
-	protected Map<String, String> getAdditionalCardParams() {
+	@NonNull
+	public Map<String, String> getAdditionalImageParams() {
 		return AmenityExtensionsHelper.getImagesParams(extensions);
 	}
 }

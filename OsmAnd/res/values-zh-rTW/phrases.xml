@@ -160,7 +160,6 @@
     <string name="poi_traffic_calming_choker">路面縮窄</string>
     <string name="poi_traffic_signals">交通號誌</string>
     <string name="poi_car_repair">汽車修理廠</string>
-    <string name="poi_service_tyres">輪胎</string>
     <string name="poi_vehicle_inspection">車輛檢修</string>
     <string name="poi_car_wash">洗車場</string>
     <string name="poi_fuel">加油站</string>
@@ -875,7 +874,7 @@
     <string name="poi_email">電子郵件</string>
     <string name="poi_fax">傳真</string>
     <string name="facebook">臉書</string>
-    <string name="poi_mobile">行動電話</string>
+    <string name="poi_mobile">手機</string>
     <string name="poi_animal_shelter_dog">狗</string>
     <string name="poi_animal_shelter_cat">貓</string>
     <string name="poi_animal_shelter_dog_cat">狗、貓</string>
@@ -1159,7 +1158,7 @@
     <string name="poi_water_characteristic_mud">泥漿</string>
     <string name="poi_water_characteristic_sulfuric">硫酸</string>
     <string name="poi_water_point">供水點</string>
-    <string name="poi_cuisine">美食</string>
+    <string name="poi_cuisine">菜系</string>
     <string name="poi_information_guidepost">路標</string>
     <string name="poi_information_board">資訊板</string>
     <string name="poi_information_map">地圖</string>
@@ -1795,7 +1794,6 @@
     <string name="poi_training_art">培訓：藝術</string>
     <string name="poi_training_cooking">培訓：烹飪</string>
     <string name="poi_training_computer">培訓：電腦</string>
-    <string name="poi_training_yoga">培訓：瑜伽</string>
     <string name="poi_training_martial_art">培訓：武術</string>
     <string name="poi_training_aviation">培訓：航空</string>
     <string name="poi_training_hairdressing">培訓：美容美髮</string>
@@ -2930,7 +2928,6 @@
     <string name="poi_cuisine_yogurt">優格</string>
     <string name="poi_cuisine_gyros">希臘旋轉烤肉</string>
     <string name="poi_cuisine_empanada">拉丁餡餅</string>
-    <string name="poi_cuisine_crepes">可麗餅</string>
     <string name="poi_cuisine_yakiniku">烤肉</string>
     <string name="poi_cuisine_suki">泰式火鍋</string>
     <string name="poi_cuisine_udon">烏龍麵</string>
@@ -3164,7 +3161,7 @@
     <string name="poi_seamark_clearance_width">可視寬度</string>
     <string name="poi_government_transportation">交通運輸機關</string>
     <string name="poi_government_legislative">議會機關</string>
-    <string name="poi_vhf">VHF頻道</string>
+    <string name="poi_vhf">VHF 頻道</string>
     <string name="poi_operational_status">操作狀態</string>
     <string name="poi_water_supply_type">供水類型</string>
     <string name="poi_water_purification">水淨化</string>
@@ -3172,11 +3169,11 @@
     <string name="poi_gorge">峽谷</string>
     <string name="poi_couloir">走廊</string>
     <string name="poi_mountain_area">山區</string>
-    <string name="poi_surface_clay">粘土</string>
-    <string name="poi_surface_tartan">格子花呢</string>
-    <string name="poi_surface_artificial_turf">人工草坪</string>
-    <string name="poi_surface_decoturf">DecoTurf</string>
-    <string name="poi_surface_metal_grid">金屬網格</string>
+    <string name="poi_surface_clay">路面：黏土</string>
+    <string name="poi_surface_tartan">路面：PU</string>
+    <string name="poi_surface_artificial_turf">路面：人工草坪</string>
+    <string name="poi_surface_decoturf">路面：DecoTurf</string>
+    <string name="poi_surface_metal_grid">路面：金屬網格</string>
     <string name="poi_location_underground">位置：地下</string>
     <string name="poi_location_underwater">位置：水下</string>
     <string name="poi_location_overground">位置：地上</string>
@@ -4542,7 +4539,7 @@
     <string name="poi_tank_trap">反坦克障礙物</string>
     <string name="poi_barrier_tyres">輪胎</string>
     <string name="poi_toy_library">兒童玩具圖書館</string>
-    <string name="poi_surface_chipseal">碎石密封</string>
+    <string name="poi_surface_chipseal">路面：碎石密封</string>
     <string name="poi_cemt">CEMT</string>
     <string name="poi_lock_name">船閘名稱</string>
     <string name="poi_draft">航道深度</string>
@@ -4939,7 +4936,7 @@
     <string name="poi_climbing_area">攀岩區</string>
     <string name="poi_climbing_route">攀登路線</string>
     <string name="poi_climbing_route_bottom">攀登路線底部</string>
-    <string name="poi_cafe_yes">是</string>
+    <string name="poi_cafe_yes">咖啡廳：是</string>
     <string name="poi_cafe_filter">咖啡廳</string>
     <string name="poi_sled_yes">雪橇：是</string>
     <string name="poi_sled_no">雪橇：否</string>
@@ -4993,7 +4990,6 @@
     <string name="poi_hazard_falling_rocks">落石</string>
     <string name="poi_hazard_contamination">污染</string>
     <string name="poi_hazard_yes">災害</string>
-    <string name="poi_hazard_additional_yes">災害</string>
     <string name="poi_network_rhn">區域馬匹網路 (RHN)</string>
     <string name="poi_network_lhn">在地馬匹網路 (LHN)</string>
     <string name="poi_network_nhn">國家馬匹網路 (NHN)</string>
@@ -5175,4 +5171,7 @@
     <string name="poi_rapids_grade_5">5（專家）</string>
     <string name="poi_rapids_grade_6">6（極限）</string>
     <string name="poi_rapids_grade_x">X（無法進入）</string>
+    <string name="poi_water_type_filter">水體類型</string>
+    <string name="poi_water_lake">湖</string>
+    <string name="poi_surface_laterite">表面：紅土</string>
 </resources>

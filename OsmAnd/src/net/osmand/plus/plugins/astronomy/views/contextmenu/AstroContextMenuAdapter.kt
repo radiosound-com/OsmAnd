@@ -1,6 +1,4 @@
 package net.osmand.plus.plugins.astronomy.views.contextmenu
-
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -9,20 +7,19 @@ import androidx.recyclerview.widget.RecyclerView
 import net.osmand.plus.OsmandApplication
 import net.osmand.plus.R
 import net.osmand.plus.activities.MapActivity
-import net.osmand.plus.mapcontextmenu.builders.cards.ImageCard
-import net.osmand.plus.mapcontextmenu.gallery.GalleryController
-import net.osmand.plus.mapcontextmenu.gallery.GalleryGridAdapter
-import net.osmand.plus.mapcontextmenu.gallery.GalleryPhotoPagerFragment
+import net.osmand.plus.gallery.contract.IGalleryListener
 import net.osmand.plus.plugins.astronomy.Catalog
+import net.osmand.shared.media.domain.MediaItem
 import java.time.LocalDate
 
 class AstroContextMenuAdapter(
 	private val app: OsmandApplication,
 	private val mapActivity: MapActivity,
 	private val nightMode: Boolean,
-	private val galleryController: GalleryController?,
-	private val onDescriptionRead: (Uri) -> Unit,
+	private val onDescriptionRead: (AstroDescriptionCardItem) -> Unit,
 	private val onGalleryToggle: (String) -> Unit,
+	private val onMediaClick: (MediaItem) -> Unit,
+	private val onActionButtonClick: (String?) -> Unit,
 	private val onUpdateImage: () -> Unit,
 	private val onKnowledgeCardAction: () -> Unit,
 	private val onVisibilityResetToToday: () -> Unit,
@@ -111,21 +108,18 @@ class AstroContextMenuAdapter(
 					itemView = view,
 					app = app,
 					mapActivity = mapActivity,
-					listener = object : GalleryGridAdapter.ImageCardListener {
+					galleryListener = object : IGalleryListener {
 
-						override fun onImageClicked(imageCard: ImageCard) {
-							galleryController?.let { controller ->
-								GalleryPhotoPagerFragment.showInstance(
-									mapActivity,
-									controller.getImageCardFromUrl(imageCard.imageUrl)
-								)
-							}
+						override fun onMediaItemClicked(mediaItem: MediaItem) {
+							onMediaClick(mediaItem)
 						}
 
-						override fun onReloadImages() {
+						override fun onReloadMediaItems() {
 							onUpdateImage()
 						}
 					},
+					actionListener = { _, _ -> },
+					onActionButtonClick = onActionButtonClick,
 					onToggle = onGalleryToggle
 				)
 			}

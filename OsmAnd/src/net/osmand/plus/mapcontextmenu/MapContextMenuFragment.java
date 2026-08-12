@@ -26,6 +26,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.*;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.view.ContextThemeWrapper;
@@ -47,7 +48,6 @@ import net.osmand.plus.R;
 import net.osmand.plus.activities.MapActivity;
 import net.osmand.plus.base.BaseFullScreenFragment;
 import net.osmand.plus.base.ContextMenuFragment;
-import net.osmand.plus.base.dialog.DialogManager;
 import net.osmand.plus.download.DownloadIndexesThread.DownloadEvents;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.helpers.MapDisplayPositionManager;
@@ -56,8 +56,9 @@ import net.osmand.plus.helpers.MapDisplayPositionManager.ICoveredScreenRectProvi
 import net.osmand.plus.helpers.MapDisplayPositionManager.IMapDisplayPositionProvider;
 import net.osmand.plus.mapcontextmenu.AdditionalActionsBottomSheetDialogFragment.ContextMenuItemClickListener;
 import net.osmand.plus.mapcontextmenu.MenuController.MenuState;
+import net.osmand.plus.mapcontextmenu.controllers.FavouritePointMenuController;
 import net.osmand.plus.mapcontextmenu.controllers.TransportStopController;
-import net.osmand.plus.mapcontextmenu.gallery.GalleryController;
+import net.osmand.plus.mapcontextmenu.other.MenuObjectUtils;
 import net.osmand.plus.routepreparationmenu.ChooseRouteFragment;
 import net.osmand.plus.routepreparationmenu.MapRouteInfoMenu;
 import net.osmand.plus.settings.backend.menuitems.MainContextMenuItemsSettings;
@@ -189,12 +190,6 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 		if (isForceCenterRequired()) {
 			this.centered = true;
 		}
-
-		DialogManager dialogManager = mapActivity.getApp().getDialogManager();
-		GalleryController controller = (GalleryController) dialogManager.findController(GalleryController.PROCESS_ID);
-		if (controller == null) {
-			dialogManager.register(GalleryController.PROCESS_ID, new GalleryController(app));
-		}
 	}
 
 	@Override
@@ -215,7 +210,7 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 		markerPaddingXPx = dpToPx(MARKER_PADDING_X_DP);
 		int shadowHeight = dpToPx(SHADOW_HEIGHT_TOP_DP);
 		topScreenPosY = addStatusBarHeightIfNeeded(-shadowHeight);
-		bottomToolbarPosY = addStatusBarHeightIfNeeded(getResources().getDimensionPixelSize(R.dimen.dashboard_map_toolbar));
+		bottomToolbarPosY = addStatusBarHeightIfNeeded(getDimensionPixelSize(R.dimen.dashboard_map_toolbar));
 		minHalfY = viewHeight - (int) (viewHeight * menu.getHalfScreenMaxHeightKoef());
 		zoomPaddingTop = getDimensionPixelSize(R.dimen.map_button_margin);
 
@@ -1772,12 +1767,20 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 		return zoom;
 	}
 
+	private float getMapRatioY() {
+		if (menu.isLandscapeLayout()) {
+			return displayPositionManager.getNavigationMapPosition() == MapPosition.BOTTOM ? 0.15f : 0.5f;
+		}
+		float ratioY = displayPositionManager.getMapRatio().y;
+		return 1f - ratioY;
+	}
+
 	private LatLon calculateCenterLatLon(LatLon latLon, int zoom, boolean updateOrigXY) {
 		double flat = latLon.getLatitude();
 		double flon = latLon.getLongitude();
 
 		RotatedTileBox cp = map.getRotatedTileBox();
-		cp.setCenterLocation(0.5f, displayPositionManager.getNavigationMapPosition() == MapPosition.BOTTOM ? 0.15f : 0.5f);
+		cp.setCenterLocation(0.5f, getMapRatioY());
 		cp.setLatLonCenter(flat, flon);
 		cp.setZoom(zoom);
 		flat = cp.getLatFromPixel(cp.getPixWidth() / 2f, cp.getPixHeight() / 2f);
@@ -1816,6 +1819,8 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 			toolbarTextView.setText(menu.getTitleStr());
 			// Text line 2
 			TextView line2 = view.findViewById(R.id.context_menu_line2);
+			MenuObjectUtils.resetSecondLineTextStyle(line2);
+			AndroidUtils.setCompoundDrawablesWithIntrinsicBounds(line2, null, null, null, null);
 			LinearLayout customAddressLine = view.findViewById(R.id.context_menu_custom_address_line);
 			customAddressLine.removeAllViews();
 			if (menu.hasCustomAddressLine()) {
@@ -1842,7 +1847,9 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 					line2Str.append(streetStr);
 				}
 				if (!TextUtils.isEmpty(line2Str)) {
-					line2.setText(line2Str.toString());
+					if (!setFavoriteFolderPathText(line2)) {
+						line2.setText(line2Str.toString());
+					}
 					line2.setVisibility(View.VISIBLE);
 				} else {
 					line2.setVisibility(View.GONE);
@@ -1898,6 +1905,15 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 
 		updateCompassVisibility();
 		updateAdditionalInfoVisibility();
+	}
+
+	private boolean setFavoriteFolderPathText(@NonNull TextView line2) {
+		MenuController controller = menu.getMenuController();
+		if (controller instanceof FavouritePointMenuController favoriteController) {
+			MenuObjectUtils.setFavoriteFolderPathText(line2, favoriteController.getFavoriteCategory(), nightMode);
+			return true;
+		}
+		return false;
 	}
 
 	private void updateAltitudeText(boolean addSeparator) {
@@ -2014,12 +2030,15 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 		}
 	}
 
+	@Nullable
+	@ColorInt
 	@Override
-	public int getNavigationBarColorId() {
+	public Integer getNavigationBarColor() {
 		if (menu.getCurrentMenuState() == MenuState.HEADER_ONLY && menu.isVisible()) {
-			return nightMode ? R.color.list_background_color_dark : R.color.activity_background_color_light;
+			int colorId = nightMode ? R.color.list_background_color_dark : R.color.activity_background_color_light;
+			return ContextCompat.getColor(requireContext(), colorId);
 		} else {
-			return super.getNavigationBarColorId();
+			return super.getNavigationBarColor();
 		}
 	}
 
@@ -2150,7 +2169,7 @@ public class MapContextMenuFragment extends BaseFullScreenFragment implements Do
 		double markerLat = reqMarkerLocation.getLatitude();
 		double markerLon = reqMarkerLocation.getLongitude();
 		RotatedTileBox box = map.getRotatedTileBox();
-		box.setCenterLocation(0.5f, displayPositionManager.getNavigationMapPosition() == MapPosition.BOTTOM ? 0.15f : 0.5f);
+		box.setCenterLocation(0.5f, getMapRatioY());
 		box.setZoom(zoom);
 		boolean hasMapCenter = mapCenter != null;
 		int markerMapCenterX = 0;

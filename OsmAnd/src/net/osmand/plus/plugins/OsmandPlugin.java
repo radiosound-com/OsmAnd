@@ -39,12 +39,13 @@ import net.osmand.plus.download.DownloadActivityType;
 import net.osmand.plus.download.DownloadOsmandIndexesHelper.IndexFileList;
 import net.osmand.plus.download.DownloadResources;
 import net.osmand.plus.download.IndexItem;
+import net.osmand.plus.gallery.data.GalleryKey;
 import net.osmand.plus.keyevent.assignment.KeyAssignment;
 import net.osmand.plus.keyevent.commands.KeyEventCommand;
 import net.osmand.plus.mapcontextmenu.MenuBuilder;
 import net.osmand.plus.mapcontextmenu.MenuController;
-import net.osmand.plus.mapcontextmenu.gallery.ImageCardsHolder;
-import net.osmand.plus.mapcontextmenu.gallery.tasks.GetImageCardsTask.GetImageCardsListener;
+import net.osmand.plus.gallery.online.OnlinePhotosHolder;
+import net.osmand.plus.gallery.online.tasks.GetOnlineImagesTask.GetImageCardsListener;
 import net.osmand.plus.myplaces.MyPlacesActivity;
 import net.osmand.plus.poi.PoiUIFilter;
 import net.osmand.plus.quickaction.QuickActionType;
@@ -260,8 +261,8 @@ public abstract class OsmandPlugin {
 	protected void attachAdditionalInfoToRecordedTrack(@NonNull Location location, @NonNull JSONObject json) throws JSONException {
 	}
 
-	protected boolean createContextMenuImageCard(@NonNull ImageCardsHolder holder,
-	                                             @NonNull JSONObject imageObject) {
+	protected boolean addContextMenuGalleryItem(@NonNull OnlinePhotosHolder holder,
+	                                            @NonNull JSONObject imageObject) {
 		return false;
 	}
 
@@ -316,7 +317,8 @@ public abstract class OsmandPlugin {
 	/*
 	 * Add gallery menu row to the map context menu.
 	 */
-	public void buildContextMenuGalleryRows(@NonNull MenuBuilder menuBuilder, @NonNull View view, @Nullable Object object) {
+	public void buildContextMenuGalleryRows(@NonNull MenuBuilder menuBuilder, @NonNull View view,
+	                                        @NonNull GalleryKey.Location key) {
 	}
 
 	@Nullable
@@ -474,7 +476,10 @@ public abstract class OsmandPlugin {
 	}
 
 	protected CommonPreference<Integer> registerIntPreference(@NonNull String prefId, int defValue) {
-		CommonPreference<Integer> preference = settings.registerIntPreference(prefId, defValue);
+		return (CommonPreference<Integer>) registerPreference(settings.registerIntPreference(prefId, defValue));
+	}
+
+	protected CommonPreference<?> registerPreference(@NonNull CommonPreference<?> preference) {
 		preference.setRelatedPlugin(this);
 		pluginPreferences.add(preference);
 		return preference;

@@ -452,6 +452,7 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 			if (Build.VERSION.SDK_INT >= 26) {
 				view.setDefaultFocusHighlightEnabled(false);
 			}
+			applyDisplayScaleSettings();
 			refreshMap(true);
 		}
 	}
@@ -642,11 +643,12 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	}
 
 	public int getViewHeight() {
-		if (view != null) {
-			return view.getHeight();
-		} else {
-			return 0;
-		}
+		return view != null ? view.getHeight() : 0;
+	}
+
+	@Nullable
+	public View getView() {
+		return view;
 	}
 
 	@NonNull
@@ -786,6 +788,14 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 			setZoomAndAnimationImpl(zoom.getBaseZoom(), 0, zoom.getZoomFloatPart());
 			setRotateImpl(rotate);
 			refreshMap();
+		}
+	}
+
+	public void applyDisplayScaleSettings() {
+		setComplexZoom(getZoom(), getSettingsMapDensity());
+		MapRendererContext mapContext = NativeCoreContext.getMapRendererContext();
+		if (mapContext != null) {
+			mapContext.updateMapSettings(true);
 		}
 	}
 
@@ -973,8 +983,7 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	}
 
 	public double getSettingsMapDensity() {
-		OsmandMap map = app.getOsmandMap();
-		return (map != null ? map.getMapDensity() : getSettings().MAP_DENSITY.get())
+		return (OsmandMap.getMapDensitySettings(app))
 				* Math.max(1, getDensity());
 	}
 
@@ -1102,8 +1111,8 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	}
 
 	public float getCarViewDensity() {
-		if (view instanceof CarSurfaceView) {
-			return ((CarSurfaceView) view).getDensity();
+		if (view instanceof CarSurfaceView surfaceView) {
+			return surfaceView.getDensity();
 		}
 		return 0;
 	}
@@ -1580,6 +1589,9 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 	}
 
 	private void setLatLonImpl(double latitude, double longitude, float ratiox, float ratioy) {
+		if (view == null) {
+			return;
+		}
 		int cx = (int) (ratiox * view.getWidth());
 		int cy = (int) (ratioy * view.getHeight());
 		if (currentViewport.getCenterPixelY() == cy && currentViewport.getCenterPixelX() == cx) {
@@ -2475,7 +2487,7 @@ public class OsmandMapTileView implements IMapDownloaderCallback {
 					}
 					// Scale and shift around the pinch center
 					mapRenderer.setViewportScale(relativeToStart, false);
-					mapRenderer.setViewportShift(multiTouchFirstX, view.getHeight() - multiTouchFirstY,  false);
+					mapRenderer.setViewportShift(multiTouchFirstX, getViewHeight() - multiTouchFirstY,  false);
 					// Re-center so the same initial tile stays under the finger
 					mapRenderer.setMapTarget(new PointI(multiTouchFirstX, multiTouchFirstY), initialFirstLocation);
 					float calcRotate = initialViewport.getRotate() + relAngle;

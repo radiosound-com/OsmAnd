@@ -136,6 +136,8 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 	private lateinit var recentChipsContainer: LinearLayout
 	private lateinit var recentChipsScroll: View
 	private lateinit var watchNowRow: View
+	private lateinit var solarEclipseRow: View
+	private lateinit var lunarEclipseRow: View
 	private lateinit var categoriesContainer: LinearLayout
 	private lateinit var myDataContainer: LinearLayout
 	private lateinit var catalogsContainer: LinearLayout
@@ -177,6 +179,7 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 
 	companion object {
 		const val TAG = "StarMapSearchDialog"
+		private const val FEATURED_CATALOGS_COUNT = 5
 
 		private const val ARG_INITIAL_CATALOG_WID = "initial_catalog_wid"
 		private const val KEY_MODE = "mode"
@@ -184,6 +187,15 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 		private const val KEY_CATALOGS_BACK_QUERY = "catalogs_back_query"
 		private const val KEY_CATALOGS_BACK_SORT = "catalogs_back_sort"
 		private const val KEY_DISMISS_ON_BROWSE_BACK = "dismiss_on_browse_back"
+		private val FEATURED_CATALOG_WIDS = listOf(
+			"Q14530",    // Messier
+			"Q857461",   // Caldwell
+			"Q2661779",  // Collinder
+			"Q55712879", // Supernova Catalog
+			"Q3247327",  // Barnard
+			"Q91442269", // Trumpler catalogue
+			"Q4999741"   // Burnham
+		)
 
 		fun newInstance(initialCatalogWid: String? = null): StarMapSearchDialogFragment {
 			return StarMapSearchDialogFragment().apply {
@@ -308,7 +320,7 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 		collection.add(InsetTarget.createScrollable(R.id.search_results))
 		collection.add(InsetTarget.createScrollable(R.id.explore_container))
 		collection.add(
-			InsetTarget.createCustomBuilder(R.id.explore_container)
+			InsetTarget.createCustomBuilder(R.id.explore_mode_container)
 				.portraitSides(InsetsUtils.InsetSide.TOP)
 				.landscapeSides(InsetsUtils.InsetSide.TOP, InsetsUtils.InsetSide.LEFT, InsetsUtils.InsetSide.RIGHT)
 				.applyPadding(true)
@@ -319,7 +331,7 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 	}
 
 	private fun bindViews(root: View) {
-		exploreContainer = root.findViewById(R.id.explore_container)
+		exploreContainer = root.findViewById(R.id.explore_mode_container)
 		fullSearchContainer = root.findViewById(R.id.full_search_container)
 		fullSearchAppBar = root.findViewById(R.id.full_search_app_bar)
 		fullSearchResultsHost = root.findViewById(R.id.full_search_results_host)
@@ -340,6 +352,8 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 		recentChipsContainer = root.findViewById(R.id.recent_chips_container)
 		recentChipsScroll = root.findViewById(R.id.recent_chips_scroll)
 		watchNowRow = root.findViewById(R.id.watch_now_row)
+		solarEclipseRow = root.findViewById(R.id.solar_eclipse_row)
+		lunarEclipseRow = root.findViewById(R.id.lunar_eclipse_row)
 		categoriesContainer = root.findViewById(R.id.categories_rows_container)
 		myDataContainer = root.findViewById(R.id.my_data_rows_container)
 		catalogsContainer = root.findViewById(R.id.catalogs_rows_container)
@@ -394,6 +408,8 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 
 	private fun setupExploreContent() {
 		setupWatchNowRow()
+		setupSolarEclipseRow()
+		setupLunarEclipseRow()
 		setupCategoryRows()
 		setupMyDataRows()
 		setupCatalogRows()
@@ -402,6 +418,20 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 	private fun setupWatchNowRow() {
 		watchNowRow.setOnClickListener {
 			openFullSearch(StarMapSearchQuickPresetType.WATCH_NOW, null)
+		}
+	}
+
+	private fun setupSolarEclipseRow() {
+		solarEclipseRow.setOnClickListener {
+			(parentFragment as? StarMapFragment)?.toggleSolarEclipseMode()
+			dismiss()
+		}
+	}
+
+	private fun setupLunarEclipseRow() {
+		lunarEclipseRow.setOnClickListener {
+			(parentFragment as? StarMapFragment)?.toggleLunarEclipseMode()
+			dismiss()
 		}
 	}
 
@@ -682,25 +712,40 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 
 	private fun setupCatalogRows() {
 		catalogsContainer.removeAllViews()
-		val catalogs = dataProvider.getCatalogs(requireContext())
-		catalogs.take(3).forEachIndexed { index, catalog ->
+		val featuredCatalogs = getFeaturedCatalogEntries()
+		featuredCatalogs.forEachIndexed { index, entry ->
 			addExploreRow(
 				container = catalogsContainer,
 				iconRes = R.drawable.ic_action_book_info,
 				iconColorRes = ColorUtilities.getDefaultIconColorId(nightMode),
-				title = catalog.name,
+				title = entry.displayName,
 				subtitle = null,
 				count = null,
-				showDivider = index != minOf(2, catalogs.lastIndex)
+				showDivider = index != featuredCatalogs.lastIndex
 			) {
 				clearCatalogsBackState()
-				openFullSearch(StarMapSearchQuickPresetType.CATALOG_WID, catalog.wid)
+				openFullSearch(StarMapSearchQuickPresetType.CATALOG_WID, entry.catalog.wid)
 			}
 		}
-		catalogsViewAllCount.text = catalogs.size.toString()
+		catalogsViewAllCount.text = getBrowsableCatalogEntries().size.toString()
 		catalogsViewAllRow.setOnClickListener {
 			openFullSearch(StarMapSearchQuickPresetType.CATALOGS, null)
 		}
+	}
+
+	private fun getBrowsableCatalogEntries(): List<StarMapCatalogEntry> {
+		return preparedCatalogEntries.filter { it.objectCount > 0 }
+	}
+
+	private fun getFeaturedCatalogEntries(): List<StarMapCatalogEntry> {
+		val entriesByWid = preparedCatalogEntries.associateBy { it.catalog.wid }
+		val prioritizedEntries = FEATURED_CATALOG_WIDS.mapNotNull(entriesByWid::get)
+		if (prioritizedEntries.size >= FEATURED_CATALOGS_COUNT) {
+			return prioritizedEntries.take(FEATURED_CATALOGS_COUNT)
+		}
+		val selectedWids = prioritizedEntries.mapTo(linkedSetOf()) { it.catalog.wid }
+		val fallbackEntries = preparedCatalogEntries.filter { it.catalog.wid !in selectedWids }
+		return (prioritizedEntries + fallbackEntries).take(FEATURED_CATALOGS_COUNT)
 	}
 
 	private fun addExploreRow(
@@ -1208,6 +1253,9 @@ class StarMapSearchDialogFragment : BaseFullScreenDialogFragment() {
 	): List<StarMapCatalogEntry> {
 		val queryLower = stateSnapshot.query.trim().lowercase(Locale.getDefault())
 		val filteredEntries = preparedCatalogEntries.filter { entry ->
+			if (entry.objectCount <= 0) {
+				return@filter false
+			}
 			if (queryLower.isEmpty()) {
 				true
 			} else {

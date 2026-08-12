@@ -38,6 +38,7 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.os.StatFs;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -252,6 +253,43 @@ public class AndroidUtils {
 		return FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
 	}
 
+	private static final int PERSISTABLE_URI_MODE_FLAGS = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+
+	/** Persists the required permission only when {@code grantedFlags} actually covers it. */
+	public static boolean takePersistableUriPermission(@NonNull Context context, @NonNull Uri uri, int grantedFlags, int requiredFlags) {
+		int requiredModeFlags = requiredFlags & PERSISTABLE_URI_MODE_FLAGS;
+		if ((grantedFlags & requiredModeFlags) != requiredModeFlags) {
+			return false;
+		}
+		return takePersistableUriPermission(context, uri, requiredFlags);
+	}
+
+	public static boolean takePersistableUriPermission(@NonNull Context context, @NonNull Uri uri, int requiredFlags) {
+		return updatePersistableUriPermission(context, uri, requiredFlags, true);
+	}
+
+	public static boolean releasePersistableUriPermission(@NonNull Context context, @NonNull Uri uri, int requiredFlags) {
+		return updatePersistableUriPermission(context, uri, requiredFlags, false);
+	}
+
+	private static boolean updatePersistableUriPermission(@NonNull Context context, @NonNull Uri uri, int requiredFlags, boolean take) {
+		int modeFlags = requiredFlags & PERSISTABLE_URI_MODE_FLAGS;
+		if (modeFlags == 0) {
+			return false;
+		}
+		try {
+			if (take) {
+				context.getContentResolver().takePersistableUriPermission(uri, modeFlags);
+			} else {
+				context.getContentResolver().releasePersistableUriPermission(uri, modeFlags);
+			}
+			return true;
+		} catch (RuntimeException e) {
+			LOG.warn("Failed to " + (take ? "persist" : "release") + " URI permission: " + uri, e);
+			return false;
+		}
+	}
+
 	public static boolean startActivityIfSafe(@NonNull Context context, @NonNull Intent intent) {
 		return startActivityIfSafe(context, intent, null);
 	}
@@ -375,7 +413,7 @@ public class AndroidUtils {
 	}
 
 	@Nullable
-	private static FormattedSize formatSize(long sizeBytes, boolean round) {
+	public static FormattedSize formatSize(long sizeBytes, boolean round) {
 		if (sizeBytes <= 0) {
 			return null;
 		}
@@ -394,9 +432,9 @@ public class AndroidUtils {
 		return result;
 	}
 
-	final static class FormattedSize {
-		String num;
-		String numSuffix;
+	public final static class FormattedSize {
+		public String num;
+		public String numSuffix;
 	}
 
 	private static float roundIfNeeded(float value, boolean round) {
@@ -1422,11 +1460,22 @@ public class AndroidUtils {
 	}
 
 	@Nullable
+	@SuppressWarnings({"deprecation", "unchecked"})
 	public static <T extends Serializable> T getSerializable(@NonNull Bundle bundle, @NonNull String key, @NonNull Class<T> clazz) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 			return bundle.getSerializable(key, clazz);
 		} else {
 			return (T) bundle.getSerializable(key);
+		}
+	}
+
+	@Nullable
+	@SuppressWarnings({"deprecation", "unchecked"})
+	public static <T extends Parcelable> T getParcelable(@NonNull Bundle bundle, @NonNull String key, @NonNull Class<T> clazz) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			return bundle.getParcelable(key, clazz);
+		} else {
+			return (T) bundle.getParcelable(key);
 		}
 	}
 

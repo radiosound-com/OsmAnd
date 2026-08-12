@@ -7,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Callback;
@@ -28,12 +29,10 @@ import net.osmand.plus.search.listitems.QuickSearchListItem;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.PicassoUtils;
 import net.osmand.plus.utils.UpdateLocationUtils.UpdateLocationViewCache;
-import net.osmand.search.core.ObjectType;
 import net.osmand.util.Algorithms;
 
 public class CityStructureItemViewHolder extends RecyclerView.ViewHolder {
 
-	public static final String OLD_NAME_TAG = "old_name";
 	public final OsmandApplication app;
 	public final UpdateLocationViewCache locationViewCache;
 
@@ -69,14 +68,29 @@ public class CityStructureItemViewHolder extends RecyclerView.ViewHolder {
 		this.nightMode = nightMode;
 	}
 
+	private void processDistanceToCity(@NonNull OsmandApplication app, @NonNull QuickSearchListItem item) {
+		MapObject mapObject = (MapObject) item.getSearchResult().object;
+		boolean needToShowDistanceToCity = false;
+		if (mapObject instanceof City city) {
+			City.CityType cityType = city.getType();
+			if (cityType == City.CityType.VILLAGE || cityType == City.CityType.HAMLET) {
+				needToShowDistanceToCity = true;
+			}
+		}
+		if (needToShowDistanceToCity) {
+			String distanceToCityStr = QuickSearchListItem.getDistanceToCity(app, item.getSearchResult());
+			distanceToCity.setText(distanceToCityStr);
+		}
+		AndroidUiHelper.updateVisibility(distanceToCity, needToShowDistanceToCity && !Algorithms.isEmpty(distanceToCity.getText()));
+	}
+
 	public void bindItem(@NonNull QuickSearchListItem item, boolean useMapCenter) {
-		CharSequence title = item.getSpannableName();
+		String lang = app.getSettings().MAP_PREFERRED_LOCALE.get().toLowerCase();
+		boolean transliterate = app.getSettings().MAP_TRANSLITERATE_NAMES.get();
+		CharSequence title = item.getMapObjectTitleWithAltName(app, nightMode);
 		MapObject mapObject = (MapObject) item.getSearchResult().object;
 		String addressText = item.getAddress();
-		String typeName = item.getTypeName();
-		AndroidUiHelper.updateVisibility(distanceToCity, mapObject instanceof City &&
-				((City) mapObject).getType() == City.CityType.VILLAGE);
-
+		processDistanceToCity(app, item);
 		if (mapObject instanceof City city) {
 			BinaryMapIndexReader mapReaderResource = null;
 			if (mapObject.getReferenceFile() instanceof BinaryMapIndexReader) {
@@ -90,47 +104,59 @@ public class CityStructureItemViewHolder extends RecyclerView.ViewHolder {
 					relatedCity.getReferenceFile() instanceof BinaryMapIndexReader relatedMapReaderResource) {
 				addressText = String.format("%s, %s", relatedCity.getName(), FileNameTranslationHelper.getFileNameWithRegion(app, relatedMapReaderResource.getFile().getName()));
 			}
-			typeName = switch (city.getType()) {
-				case VILLAGE -> app.getString(R.string.city_type_village);
-				case SUBURB -> app.getString(R.string.city_type_suburb);
-				case TOWN -> app.getString(R.string.city_type_town);
-				case BOUNDARY -> app.getString(R.string.poi_boundary_stone);
-				case POSTCODE -> app.getString(R.string.postcode);
-				default -> app.getString(R.string.city_type_city);
-			};
-			if (city.getType() == City.CityType.VILLAGE) {
-				String distanceToCityStr = QuickSearchListItem.getDistanceToCity(app, item.getSearchResult());
-				if (distanceToCityStr != null) {
-					distanceToCity.setText(distanceToCityStr);
-				} else {
-					AndroidUiHelper.updateVisibility(distanceToCity, false);
-				}
-			}
 		} else if (mapObject instanceof Street street) {
-			if (street.getNamesMap(false).containsKey(OLD_NAME_TAG)) {
-				title = String.format("%s (%s)", title, street.getName(OLD_NAME_TAG));
+			StringBuilder streetAddressBuilder = new StringBuilder();
+			String cityPart = QuickSearchListItem.getStreetCityPart(item.getSearchResult());
+			if (cityPart != null) {
+				streetAddressBuilder.append(cityPart);
 			}
-			addressText = street.getCity().getName();
-			if (item.getSearchResult().objectType == ObjectType.STREET) {
-				typeName = app.getString(R.string.search_address_street);
-			} else if (item.getSearchResult().objectType == ObjectType.STREET_INTERSECTION) {
-				typeName = app.getString(R.string.intersection);
+			if (!Algorithms.isEmpty(streetAddressBuilder)) {
+				streetAddressBuilder.append(", ");
 			}
+			streetAddressBuilder.append(street.getCity().getName());
+			addressText = streetAddressBuilder.toString();
 		} else if (mapObject instanceof Building) {
-			StringBuilder address = new StringBuilder(item.getSearchResult().localeRelatedObjectName);
 			if (item.getSearchResult().relatedObject instanceof Street street) {
-				address.append(", ").append(street.getCity().getName());
+				StringBuilder cityName = new StringBuilder(street.getCity().getName(lang, transliterate));
+				title = String.format("%s, %s", title, street.getNameWithoutCityPart(lang, transliterate));
+				String cityPart = street.getNameCityPart(lang, transliterate);
+				if(!Algorithms.isEmpty(cityPart)) {
+					cityName.append(", ").append(cityPart);
+				}
+				addressText = cityName.toString();
 			}
-			addressText = address.toString();
-			typeName = app.getString(R.string.search_address_building);
 		}
 		addressTv.setText(addressText);
 		AndroidUiHelper.updateVisibility(addressTv, !Algorithms.isEmpty(addressText));
 		AndroidUiHelper.updateVisibility(addressDotDivider, !Algorithms.isEmpty(addressText));
 		titleTv.setText(title);
-		type.setText(typeName);
+		String typeName = getTypeName(app, mapObject);
+		type.setText(typeName != null ? typeName : item.getTypeName());
 		bindImage(item, mapObject);
 		QuickSearchListAdapter.updateCompass(itemView, item, locationViewCache, useMapCenter);
+	}
+
+	@Nullable
+	public static String getTypeName(@NonNull OsmandApplication app, @NonNull MapObject mapObject) {
+		if (mapObject instanceof City city) {
+			return switch (city.getType()) {
+				case VILLAGE -> app.getString(R.string.city_type_village);
+				case SUBURB -> app.getString(R.string.city_type_suburb);
+				case TOWN -> app.getString(R.string.city_type_town);
+				case BOUNDARY -> app.getString(R.string.poi_boundary_stone);
+				case POSTCODE -> app.getString(R.string.postcode);
+				case HAMLET -> app.getString(R.string.city_type_hamlet);
+				case NEIGHBOURHOOD -> app.getString(R.string.city_type_neighbourhood);
+				case DISTRICT -> app.getString(R.string.city_type_district);
+				case BOROUGH -> app.getString(R.string.poi_borough);
+				default -> app.getString(R.string.city_type_city);
+			};
+		} else if (mapObject instanceof Street) {
+			return app.getString(R.string.search_address_street);
+		} else if (mapObject instanceof Building) {
+			return app.getString(R.string.search_address_building);
+		}
+		return null;
 	}
 
 	private void bindImage(@NonNull QuickSearchListItem item, MapObject mapObject) {

@@ -71,6 +71,9 @@ class Obd2Connection(
 				}
 			}
 			log("runImpl($command) returned $responseRead")
+			if(responseRead.contains("0:")) {
+				responseRead = responseRead.substring(responseRead.indexOf("0:"))
+			}
 			responseRead = responseRead.replace("\r", "")
 				.replace("\n", "")
 				.replace(" ", "")
@@ -176,17 +179,17 @@ class Obd2Connection(
 		commandType: COMMAND_TYPE?): String {
 		var normalizedResponse = response
 		val unspacedCommand = fullCommand.replace(" ", "")
+		normalizedResponse = unpackLongFrame(normalizedResponse)
 		if (normalizedResponse.startsWith(unspacedCommand))
 			normalizedResponse = normalizedResponse.substring(unspacedCommand.length)
 		commandType?.let {
-			if (!normalizedResponse.startsWith(it.responseCodeText)) {
+			if (!normalizedResponse.startsWith(it.responseCodeText) && fullCommand != OBDCommand.OBD_ALT_BATTERY_VOLTAGE_COMMAND.textCommand) {
 				val responseStart = normalizedResponse.indexOf(it.responseCodeText)
 				if (responseStart != -1) {
 					normalizedResponse = normalizedResponse.substring(responseStart)
 				}
 			}
 		}
-		normalizedResponse = unpackLongFrame(normalizedResponse)
 		normalizedResponse = removeSideData(normalizedResponse)
 		return normalizedResponse
 	}

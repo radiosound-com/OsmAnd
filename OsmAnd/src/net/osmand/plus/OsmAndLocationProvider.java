@@ -3,7 +3,6 @@ package net.osmand.plus;
 import static android.content.Context.LOCATION_SERVICE;
 import static android.location.LocationManager.GPS_PROVIDER;
 import static android.location.LocationManager.NETWORK_PROVIDER;
-
 import static net.osmand.plus.simulation.SimulationProvider.isTunnelLocationSimulated;
 
 import android.Manifest;
@@ -89,7 +88,7 @@ public class OsmAndLocationProvider implements SensorEventListener {
 	private static final long START_LOCATION_SIMULATION_DELAY = 2000;
 	private static final int UPCOMING_TUNNEL_DISTANCE = 250;
 
-	public  static final float ACCURACY_FOR_GPX_AND_ROUTING = 50;
+	public static final float ACCURACY_FOR_GPX_AND_ROUTING = 50;
 
 	public static final int NOT_SWITCH_TO_NETWORK_WHEN_GPS_LOST_MS = 12000;
 
@@ -101,6 +100,11 @@ public class OsmAndLocationProvider implements SensorEventListener {
 	private static final int REQUESTS_BEFORE_CHECK_LOCATION = 100;
 	private final AtomicInteger locationRequestsCounter = new AtomicInteger();
 	private final AtomicInteger staleLocationRequestsCounter = new AtomicInteger();
+	
+	private static final float MSL_CALIBRATION_MAX_ACCURACY = 10f;
+	private static final int DYNAMIC_GEOID_OFFSET_MAX_DISTANCE = 100_000;
+	
+	private static Location cachedMLSGeoidLocation = null;
 
 
 	private long lastTimeGPSLocationFixed;
@@ -206,9 +210,9 @@ public class OsmAndLocationProvider implements SensorEventListener {
 					}
 				});
 			} catch (SecurityException e) {
-				// Location service permission not granted
+				LOG.error("Location service permission not granted", e);
 			} catch (IllegalArgumentException e) {
-				// GPS location provider not available
+				LOG.error("GPS location provider not available", e);
 			}
 			// try to always ask for network provide : it is faster way to find location
 			if (locationServiceHelper.isNetworkLocationUpdatesSupported()) {
@@ -216,7 +220,7 @@ public class OsmAndLocationProvider implements SensorEventListener {
 					@Override
 					public void onLocationResult(@NonNull List<net.osmand.Location> locations) {
 						if (!locations.isEmpty() && !useOnlyGPS() && !locationSimulation.isRouteAnimating()) {
- 							setLocation(locations.get(locations.size() - 1));
+							setLocation(locations.get(locations.size() - 1));
 						}
 					}
 				});
@@ -225,6 +229,7 @@ public class OsmAndLocationProvider implements SensorEventListener {
 	}
 
 	public void redownloadAGPS() {
+		LOG.info(">>>> redownloadAGPS");
 		try {
 			LocationManager service = (LocationManager) app.getSystemService(LOCATION_SERVICE);
 			// Issue 6410: Test not forcing cold start here
@@ -234,6 +239,7 @@ public class OsmAndLocationProvider implements SensorEventListener {
 			service.sendExtraCommand(GPS_PROVIDER, "force_time_injection", bundle);
 			app.getSettings().AGPS_DATA_LAST_TIME_DOWNLOADED.set(System.currentTimeMillis());
 		} catch (Exception e) {
+			LOG.debug(e);
 			app.getSettings().AGPS_DATA_LAST_TIME_DOWNLOADED.set(0L);
 		}
 	}
@@ -570,19 +576,39 @@ public class OsmAndLocationProvider implements SensorEventListener {
 		if (l.hasSpeed()) {
 			r.setSpeed(l.getSpeed());
 		}
-		if (l.hasAltitude()) {
-			r.setAltitude(l.getAltitude());
+		if (VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE && l.hasMslAltitude() && l.hasAltitude()) {
+			r.setAltitude(l.getMslAltitudeMeters());
+			boolean qualityAcceptable = true;
+			if (l.hasMslAltitudeAccuracy()) {
+				r.setVerticalAccuracy(l.getMslAltitudeAccuracyMeters());
+				qualityAcceptable = l.getMslAltitudeAccuracyMeters() <= MSL_CALIBRATION_MAX_ACCURACY;
+			}
+			if (qualityAcceptable) {
+				double newOffset = l.getAltitude() - l.getMslAltitudeMeters();
+				if (cachedMLSGeoidLocation == null) {
+					LOG.info("Dynamic geoid offset calibrated: " + newOffset + "m (provider=" + l.getProvider() +
+							(l.hasMslAltitudeAccuracy() ? ", MSL accuracy=" + l.getMslAltitudeAccuracyMeters() + "m" : "") + ")");
+				}
+				cachedMLSGeoidLocation = l;
+			}
+		} else if (l.hasAltitude()) {
+			double alt = l.getAltitude();
+			GeoidAltitudeCorrection geo = app == null ? null : app.getResourceManager().getGeoidAltitudeCorrection();
+			if (geo != null && geo.isGeoidInformationAvailable()) {
+				alt -= geo.getGeoidHeight(l.getLatitude(), l.getLongitude());
+			} else if (cachedMLSGeoidLocation != null) {
+				double dist = MapUtils.getDistance(cachedMLSGeoidLocation.getLatitude(), cachedMLSGeoidLocation.getLongitude(), l.getLatitude(), l.getLongitude());
+				if (dist < DYNAMIC_GEOID_OFFSET_MAX_DISTANCE) {
+					alt -= cachedMLSGeoidLocation.getAltitude() - cachedMLSGeoidLocation.getMslAltitudeMeters();
+				} else {
+					cachedMLSGeoidLocation = null;
+				}
+			}
+			r.setAltitude(alt);
 		}
+		
 		if (l.hasBearing()) {
 			r.setBearing(l.getBearing());
-		}
-		if (l.hasAltitude() && app != null) {
-			double alt = l.getAltitude();
-			GeoidAltitudeCorrection geo = app.getResourceManager().getGeoidAltitudeCorrection();
-			if (geo != null) {
-				alt -= geo.getGeoidHeight(l.getLatitude(), l.getLongitude());
-				r.setAltitude(alt);
-			}
 		}
 		return r;
 	}
@@ -875,7 +901,8 @@ public class OsmAndLocationProvider implements SensorEventListener {
 		try {
 			LocationManager manager = (LocationManager) app.getSystemService(LOCATION_SERVICE);
 			return manager.isProviderEnabled(GPS_PROVIDER);
-		} catch (Exception ignored) {
+		} catch (Exception e) {
+			LOG.debug(e);
 		}
 		return false;
 	}
@@ -884,7 +911,8 @@ public class OsmAndLocationProvider implements SensorEventListener {
 		try {
 			LocationManager manager = (LocationManager) app.getSystemService(LOCATION_SERVICE);
 			return manager.isProviderEnabled(NETWORK_PROVIDER);
-		} catch (Exception ignored) {
+		} catch (Exception e) {
+			LOG.debug(e);
 		}
 		return false;
 	}

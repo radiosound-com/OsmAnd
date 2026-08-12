@@ -1,37 +1,40 @@
 package net.osmand.data;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import net.osmand.osm.edit.Entity;
 import net.osmand.osm.edit.OSMSettings.OSMTagKey;
 import net.osmand.util.Algorithms;
+import net.osmand.util.MapUtils;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.*;
 
 
 public class City extends MapObject {
+
 	public enum CityType {
-		// that's tricky way to play with that numbers (to avoid including suburbs in city & vice verse)
+		// that's a tricky way to play with that numbers (to avoid including suburbs in city & vice verse)
 		CITY(10000, 100000), // 0. City
 		TOWN(4000, 20000), // 1. Town
 		VILLAGE(1300, 1000), // 2. Village 
 		HAMLET(1000, 100), // 3. Hamlet - Small village
 		SUBURB(1500, 5000), // 4. Mostly district of the city (introduced to avoid duplicate streets in city) - 
 						   // however BOROUGH, DISTRICT, NEIGHBOURHOOD could be used as well for that purpose
-						   // Main difference stores own streets to search and list by it  
+						   // Main difference stores own streets to search and list by it
 		// 5.2 stored in city / villages sections written as city type
 		BOUNDARY(0, 0), // 5. boundary no streets
 		// 5.3 stored in city / villages sections written as city type
 		POSTCODE(500, 1000), // 6. write this could be activated after 5.2 release
 		
 		// not stored entities but registered to uniquely identify streets as SUBURB
-		BOROUGH(2000, 2500),  
+		BOROUGH(2000, 2500),
 		DISTRICT(1000, 10000),
 		NEIGHBOURHOOD(500, 500),
-		CENSUS(2000, 2500),
-		;
-		
+		CENSUS(2000, 2500);
+
+		private static final CityType[] VALUES = CityType.values();
+
 		private final double radius;
 		private final int population;
 		
@@ -80,16 +83,17 @@ public class City extends MapObject {
 			if ("township".equals(place)) {
 				return CityType.TOWN;
 			}
-			for (CityType t : CityType.values()) {
-				if (t.name().equalsIgnoreCase(place) 
-						&& t != BOUNDARY && t != POSTCODE) {
-					return t;
+			if ("allotments".equals(place)) {
+				return CityType.SUBURB;
+			}
+			for (int i = 0; i < VALUES.length; i++) {
+				CityType type = VALUES[i];
+				if (type != BOUNDARY && type != POSTCODE && type.name().equalsIgnoreCase(place)) {
+					return type;
 				}
 			}
 			return null;
 		}
-		
-		
 	}
 
 	private CityType type = null;
@@ -123,8 +127,51 @@ public class City extends MapObject {
 		return isin.contains(name.toLowerCase());
 	}
 	
+	@Override
 	public int[] getBbox31() {
 		return bbox31;
+	}
+	
+	public void calculateBbox31FromStreets() {
+		for (Street s : getStreets()) {
+			// could be more precise with min max
+			updateBbox31WithLoc(s.getBboxPoints());
+		}
+ 	}
+	
+	public boolean updateBbox31WithLoc(LatLon location) {
+		return updateBbox31WithLoc(getMinBbox(location));
+	}
+	
+	public boolean updateBbox31WithLoc(QuadRect quadRect) {
+		int lx = MapUtils.get31TileNumberX(quadRect.left);
+		int rx = MapUtils.get31TileNumberX(quadRect.right);
+		int ty = MapUtils.get31TileNumberY(quadRect.top);
+		int by = MapUtils.get31TileNumberY(quadRect.bottom);
+		if (bbox31 != null) {
+			if (by > bbox31[3] || ty < bbox31[1] || rx > bbox31[2] || lx < bbox31[0]) {
+				bbox31[0] = Math.min(lx, bbox31[0]);
+				bbox31[1] = Math.min(ty, bbox31[1]);
+				bbox31[2] = Math.max(rx, bbox31[2]);
+				bbox31[3] = Math.max(by, bbox31[3]);
+				return true;
+			}
+		} else {
+			int cx = MapUtils.get31TileNumberX(getLocation().getLongitude());
+			int cy = MapUtils.get31TileNumberY(getLocation().getLatitude());
+			bbox31 = new int[4];
+			bbox31[0] = Math.min(lx, cx);
+			bbox31[1] = Math.min(ty, cy);
+			bbox31[2] = Math.max(rx, cx);
+			bbox31[3] = Math.max(by, cy);
+			return true;
+		}
+		return false;
+	}
+	
+	public void setBbox31(QuadRect bbox) {
+		this.bbox31 = new int[] { MapUtils.get31TileNumberX(bbox.left), MapUtils.get31TileNumberY(bbox.top),
+				MapUtils.get31TileNumberX(bbox.right), MapUtils.get31TileNumberY(bbox.bottom) };
 	}
 	
 	public void setBbox31(int[] bbox31) {
@@ -188,7 +235,6 @@ public class City extends MapObject {
 
 	// Be attentive ! Working with street names ignoring case
 	private Set<String> isin = null;
-	
 	
 	public Set<String> getIsin() {
 		return isin;
@@ -334,4 +380,7 @@ public class City extends MapObject {
 		}
 		return c;
 	}
+
+
+	
 }

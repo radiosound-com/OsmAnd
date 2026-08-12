@@ -114,7 +114,6 @@
     <string name="poi_traffic_calming_choker">Indsnævring</string>
     <string name="poi_traffic_signals">Lyskryds</string>
     <string name="poi_car_repair">Autoværksted</string>
-    <string name="poi_service_tyres">Dækservice</string>
     <string name="poi_vehicle_inspection">Bilsyn</string>
     <string name="poi_car_wash">Bilvask</string>
     <string name="poi_fuel">Tankstation;Benzintank;Servicestation</string>
@@ -248,7 +247,7 @@
     <string name="poi_sports_centre">Sportscenter</string>
     <string name="poi_golf_course">Golfbane</string>
     <string name="poi_ice_rink">Skøjtebane</string>
-    <string name="poi_pitch">Sportsplads</string>
+    <string name="poi_pitch">Sportsbane</string>
     <string name="poi_running_track">Løbebane</string>
     <string name="poi_bicycle_track">Cykelbane</string>
     <string name="poi_horse_track">Travbane</string>
@@ -567,8 +566,8 @@
     <string name="poi_healthcare_yes">Medicinsk facilitet</string>
     <string name="poi_palaeontological_site">Palæontologisk område</string>
     <string name="poi_motorway_junction">Motorvejskryds</string>
-    <string name="poi_pier">Mole</string>
-    <string name="poi_leisure_track">Sportsbane</string>
+    <string name="poi_pier">Både-/badebro</string>
+    <string name="poi_leisure_track">Løbsbane</string>
     <string name="poi_ridge">Højderyg</string>
     <string name="poi_glacier">Gletscher</string>
     <string name="poi_river">Flod</string>
@@ -1788,7 +1787,6 @@
     <string name="poi_training_art">Uddannelse: kunst</string>
     <string name="poi_training_cooking">Uddannelse: madlavning</string>
     <string name="poi_training_computer">Uddannelse: computer</string>
-    <string name="poi_training_yoga">Uddannelse: yoga</string>
     <string name="poi_training_martial_art">Uddannelse: kampsport</string>
     <string name="poi_training_aviation">Uddannelse: luftfart</string>
     <string name="poi_training_hairdressing">Uddannelse: frisør</string>
@@ -2886,7 +2884,6 @@
     <string name="poi_cuisine_yogurt">Yoghurt</string>
     <string name="poi_cuisine_gyros">Gyros</string>
     <string name="poi_cuisine_empanada">Empanada</string>
-    <string name="poi_cuisine_crepes">Crepes</string>
     <string name="poi_cuisine_yakiniku">Yakiniku</string>
     <string name="poi_cuisine_suki">Suki</string>
     <string name="poi_cuisine_udon">Udon</string>
@@ -3168,11 +3165,11 @@
     <string name="poi_gorge">Kløft</string>
     <string name="poi_couloir">Couloir</string>
     <string name="poi_mountain_area">Bjergområde</string>
-    <string name="poi_surface_clay">Ler</string>
+    <string name="poi_surface_clay">Overflade: Ler</string>
     <string name="poi_surface_tartan">Tartan</string>
-    <string name="poi_surface_artificial_turf">Kunstgræs</string>
-    <string name="poi_surface_decoturf">DecoTurf</string>
-    <string name="poi_surface_metal_grid">Metalgitter</string>
+    <string name="poi_surface_artificial_turf">Overflade: Kunstgræs</string>
+    <string name="poi_surface_decoturf">Overflade: DecoTurf</string>
+    <string name="poi_surface_metal_grid">Overflade: Metalgitter</string>
     <string name="poi_location_underground">Placering: under jorden</string>
     <string name="poi_location_underwater">Placering: under vandet</string>
     <string name="poi_location_overground">Placering: over jorden</string>
@@ -3836,7 +3833,7 @@
     <string name="poi_liaison_filter">Forbindelsesofficerer</string>
     <string name="poi_consulate_filter">Konsulat</string>
     <string name="poi_embassy_filter">Ambassade</string>
-    <string name="poi_parking_layby">Langs gaden</string>
+    <string name="poi_parking_layby">Holdebane</string>
     <string name="poi_parking_sheds">Overdækket parkering</string>
     <string name="poi_fuel_lng">LNG</string>
     <string name="poi_siren">Sirene</string>
@@ -4097,7 +4094,7 @@
     <string name="poi_climbing_area">Klatreområde</string>
     <string name="poi_climbing_route">Klatrerute</string>
     <string name="poi_climbing_route_bottom">Klatrerute bund</string>
-    <string name="poi_cafe_yes">Ja</string>
+    <string name="poi_cafe_yes">Cafe: Ja</string>
     <string name="poi_roundtrip_yes">Rundtur: ja</string>
     <string name="poi_recycling_glass_bottles_colour">Farvede glasflasker</string>
     <string name="poi_roundtrip_no">Rundtur: nej</string>
@@ -4217,7 +4214,6 @@
     <string name="poi_hindu_temple">Hindutempel</string>
     <string name="poi_consulate">Konsulat</string>
     <string name="poi_hazard_landslide">Jordskred</string>
-    <string name="poi_hazard_additional_yes">Fare</string>
     <string name="poi_hazard_falling_rocks">Faldende sten</string>
     <string name="poi_hazard_contamination">Forurening</string>
     <string name="poi_hazard_yes">Fare</string>
@@ -4310,4 +4306,10 @@
     <string name="poi_covered_booth_filter">Stand</string>
     <string name="poi_route_activity_type_canoe">Kano</string>
     <string name="poi_us_maps_recreation_area_facility_group_shelter">Gruppehjem</string>
+    <string name="poi_trolley_bay">Bås til indkøbsvogne</string>
+    <string name="poi_water_lake">Sø</string>
+    <string name="poi_water_type_filter">Vandtype</string>
+    <string name="poi_surface_laterite">Overflade: Laterit</string>
+    <string name="poi_surface_chipseal">Overflade: Chipseal</string>
+    <string name="poi_sled_yes">Slæde: Ja</string>
 </resources>

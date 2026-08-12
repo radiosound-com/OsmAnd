@@ -9,6 +9,8 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import net.osmand.plus.OsmandApplication;
+import net.osmand.plus.R;
 import net.osmand.plus.plugins.externalsensors.DeviceType;
 import net.osmand.plus.plugins.externalsensors.devices.sensors.AbstractSensor;
 import net.osmand.plus.plugins.externalsensors.devices.sensors.DeviceChangeableProperty;
@@ -35,6 +37,7 @@ public abstract class AbstractDevice<T extends AbstractSensor> {
 	protected List<DeviceListener> listeners = new ArrayList<>();
 	protected List<T> sensors = new ArrayList<>();
 	protected String deviceName;
+	private boolean batteryLevelWarningShown;
 
 	public interface DeviceListener {
 
@@ -52,6 +55,10 @@ public abstract class AbstractDevice<T extends AbstractSensor> {
 		default void onDeviceConnectionFailed(@NonNull AbstractDevice<?> device) {
 
 		}
+
+		default void onActualStateChanged(){
+
+		}
 	}
 
 	public AbstractDevice(@NonNull String deviceId) {
@@ -59,6 +66,9 @@ public abstract class AbstractDevice<T extends AbstractSensor> {
 	}
 
 	protected void setCurrentState(@NonNull DeviceConnectionState newState) {
+		if (state != DeviceConnectionState.CONNECTED && newState == DeviceConnectionState.CONNECTED) {
+			batteryLevelWarningShown = false;
+		}
 		state = newState;
 	}
 
@@ -172,9 +182,15 @@ public abstract class AbstractDevice<T extends AbstractSensor> {
 		}
 	}
 
+	public void fireDeviceActualStateChanged() {
+		for (DeviceListener listener : listeners) {
+			listener.onActualStateChanged();
+		}
+	}
+
 	public void writeSensorDataToJson(@NonNull JSONObject json, @NonNull SensorWidgetDataFieldType widgetDataFieldType) throws JSONException {
 		for (T sensor : sensors) {
-			if (sensor.getSupportedWidgetDataFieldTypes().contains(widgetDataFieldType)) {
+			if (sensor.getSupportedWidgetDataFieldTypes().contains(widgetDataFieldType) && sensor.hasActualData()) {
 				sensor.writeSensorDataToJson(json, widgetDataFieldType);
 			}
 		}
@@ -195,5 +211,12 @@ public abstract class AbstractDevice<T extends AbstractSensor> {
 	@Override
 	public String toString() {
 		return getName() + " (" + getDeviceId() + ")";
+	}
+
+	public void showBatteryLevelWarningIfNeeded(OsmandApplication app) {
+		if (!batteryLevelWarningShown && isBatteryLow()) {
+			app.showShortToastMessage(R.string.external_device_low_battery);
+			batteryLevelWarningShown = true;
+		}
 	}
 }

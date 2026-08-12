@@ -4,7 +4,6 @@ import static net.osmand.CollatorStringMatcher.StringMatcherMode.CHECK_STARTS_FR
 
 import android.graphics.drawable.Drawable;
 import android.text.SpannableString;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -22,16 +21,21 @@ import com.squareup.picasso.RequestCreator;
 
 import net.osmand.StringMatcher;
 import net.osmand.data.Amenity;
+import net.osmand.data.MapObject;
 import net.osmand.osm.AbstractPoiType;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.R;
 import net.osmand.plus.helpers.AmenityExtensionsHelper;
 import net.osmand.plus.helpers.AndroidUiHelper;
 import net.osmand.plus.mapcontextmenu.MenuController;
+import net.osmand.plus.mapcontextmenu.builders.rows.PoiAdditionalUiRule;
+import net.osmand.plus.mapcontextmenu.builders.rows.PoiAdditionalUiRules;
 import net.osmand.plus.mapcontextmenu.controllers.NetworkRouteDrawable;
 import net.osmand.plus.mapcontextmenu.other.TrimToBackgroundTextView;
-import net.osmand.plus.search.dialogs.QuickSearchListAdapter;
+import net.osmand.plus.search.dialogs.SearchScopeChip;
 import net.osmand.plus.search.listitems.QuickSearchListItem;
+import net.osmand.plus.settings.backend.ApplicationMode;
+import net.osmand.plus.settings.enums.ThemeUsageContext;
 import net.osmand.plus.track.clickable.ClickableWayHelper;
 import net.osmand.plus.utils.AndroidUtils;
 import net.osmand.plus.utils.ColorUtilities;
@@ -40,6 +44,8 @@ import net.osmand.plus.utils.UiUtilities;
 import net.osmand.plus.utils.UpdateLocationUtils.UpdateLocationViewCache;
 import net.osmand.search.SearchUICore;
 import net.osmand.search.core.SearchPhrase.NameStringMatcher;
+import net.osmand.search.core.TopIndexFilter;
+import net.osmand.search.core.spatial.SpatialSearchResult;
 import net.osmand.util.Algorithms;
 import net.osmand.util.OpeningHoursParser;
 import net.osmand.util.OpeningHoursParser.OpeningHours;
@@ -70,11 +76,12 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 		TextView subtitle = view.findViewById(R.id.subtitle);
 		ImageView imageView = view.findViewById(R.id.imageView);
 
+		OsmandApplication app = (OsmandApplication) view.getContext().getApplicationContext();
 		imageView.setImageDrawable(item.getIcon());
+		setupIconContainer(view, imageView, app);
 		String name = item.getName();
 		title.setText(item.getSpannableName());
 
-		OsmandApplication app = (OsmandApplication) view.getContext().getApplicationContext();
 		String desc = item.getTypeName();
 		Object searchResultObject = item.getSearchResult().object;
 		if (searchResultObject instanceof AbstractPoiType) {
@@ -109,7 +116,6 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 				subtitle.setVisibility(View.GONE);
 			}
 		}
-
 		Drawable typeIcon = item.getTypeIcon();
 		ImageView groupIcon = view.findViewById(R.id.type_name_icon);
 		if (groupIcon != null) {
@@ -133,7 +139,7 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 					SpannableString openHours = MenuController.getSpannableOpeningHours(
 							rs.getInfo(),
 							ContextCompat.getColor(app, colorOpen),
-							ContextCompat.getColor(app, colorClosed));
+							ContextCompat.getColor(app, colorClosed), true);
 					int colorId = rs.isOpenedForTime(calendar) ? colorOpen : colorClosed;
 					timeLayout.setVisibility(View.VISIBLE);
 
@@ -150,10 +156,89 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 		}
 	}
 
+	public static void bindSpatialCategorySearchResult(@NonNull View view, @NonNull QuickSearchListItem item) {
+		TextView title = view.findViewById(R.id.title);
+		TextView subtitle = view.findViewById(R.id.subtitle);
+		ImageView imageView = view.findViewById(R.id.imageView);
+
+		OsmandApplication app = (OsmandApplication) view.getContext().getApplicationContext();
+		imageView.setImageDrawable(item.getIcon());
+		setupIconContainer(view, imageView, app);
+		title.setText(item.getSpannableName());
+		bindSpatialCategoryPart(view, item, app, subtitle);
+
+		LinearLayout timeLayout = view.findViewById(R.id.time_layout);
+		if (timeLayout != null) {
+			timeLayout.setVisibility(View.GONE);
+		}
+	}
+
+	public static void bindSpatialCategoryPart(@NonNull View view, @NonNull QuickSearchListItem item,
+	                                           @NonNull OsmandApplication app, @NonNull TextView subtitle) {
+		SpatialSearchResult spatialSearchResult = item.getSpatialSearchResult();
+		if (spatialSearchResult == null || !spatialSearchResult.isPoiCategory()) {
+			return;
+		}
+		SearchScopeChip chip = view.findViewById(R.id.search_scope_chip);
+		ImageView groupIcon = view.findViewById(R.id.type_name_icon);
+		groupIcon.setVisibility(View.GONE);
+		ApplicationMode applicationMode = app.getSettings().getApplicationMode();
+		boolean nightMode = app.getDaynightHelper().isNightMode(applicationMode, ThemeUsageContext.APP);
+		if (chip != null) {
+			MapObject refObject = spatialSearchResult.getReferenceObject();
+			if (refObject != null) {
+				chip.setScopeName(refObject.getName(), nightMode);
+			}
+		}
+		subtitle.setText(app.getString(R.string.shared_string_near).toLowerCase());
+		subtitle.setVisibility(View.VISIBLE);
+
+		if (item.getSearchResult().object instanceof TopIndexFilter topIndexFilter) {
+			PoiAdditionalUiRule uiRule = PoiAdditionalUiRules.INSTANCE.findRule(topIndexFilter.getTag());
+			if (uiRule.getCustomIconId() != null) {
+				int iconColor = nightMode ? R.color.osmand_orange_dark : R.color.osmand_orange;
+				Drawable icon = app.getUIUtilities().getIcon(uiRule.getCustomIconId(), iconColor);
+				((ImageView)view.findViewById(R.id.imageView)).setImageDrawable(icon);
+			}
+		}
+	}
+
+	private static void setupIconContainer(@NonNull View view, @NonNull ImageView imageView,
+	                                       @NonNull OsmandApplication app) {
+		FrameLayout imageContainer = view.findViewById(R.id.image_container);
+		if (imageContainer != null) {
+			FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) imageView.getLayoutParams();
+			params.width = AndroidUtils.dpToPx(app, 24);
+			params.height = AndroidUtils.dpToPx(app, 24);
+			params.gravity = Gravity.CENTER;
+			imageView.setLayoutParams(params);
+			imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+			int margin = AndroidUtils.dpToPx(app, 6);
+			imageContainer.setPadding(margin, margin, margin, margin);
+		}
+	}
+
+	public static void bindFullSearchResult(@NonNull View view, @NonNull QuickSearchListItem item) {
+		TextView title = view.findViewById(R.id.title);
+		TextView subtitle = view.findViewById(R.id.subtitle);
+		ImageView imageView = view.findViewById(R.id.imageView);
+
+		imageView.setImageDrawable(item.getIcon());
+		title.setText(item.getSpannableName());
+		String typeName = item.getTypeName();
+		subtitle.setText(typeName);
+		AndroidUiHelper.updateVisibility(subtitle, !Algorithms.isEmpty(typeName));
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.address), false);
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.time_layout), false);
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.description), false);
+		AndroidUiHelper.updateVisibility(view.findViewById(R.id.shieldSign), false);
+	}
+
 	public static void bindPOISearchResult(@NonNull View view, @NonNull QuickSearchListItem item,
 	                                       boolean nightMode, Calendar calendar) {
 		OsmandApplication app = (OsmandApplication) view.getContext().getApplicationContext();
-		TextView title = view.findViewById(R.id.title);
+		TextView titleTv = view.findViewById(R.id.title);
 		TextView subtitle = view.findViewById(R.id.subtitle);
 		TextView addressTv = view.findViewById(R.id.address);
 		ImageView imageView = view.findViewById(R.id.imageView);
@@ -165,8 +250,7 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 		boolean hasRouteShield = false;
 
 		String address = item.getAddress();
-		String name = item.getName();
-		String altName = item.getAltName();
+		CharSequence title = item.getMapObjectTitleWithAltName(app, nightMode);
 		String typeName = QuickSearchListItem.getTypeName(app, item.getSearchResult());
 		if (!Algorithms.isEmpty(typeName)) {
 			int typenameComaPosition = typeName.indexOf(",");
@@ -175,9 +259,7 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 			}
 		}
 		Amenity amenity = (Amenity) item.getSearchResult().object;
-		if (Algorithms.isEmpty(altName)) {
-			altName = amenity.getName(Amenity.ALT_NAME_TAG);
-		}
+		titleTv.setText(title);
 
 		String description = null;
 		String photoUrl = null;
@@ -191,15 +273,6 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 			}
 		}
 
-		if (!Algorithms.isEmpty(altName) && !Algorithms.stringsEqual(name, altName)) {
-			name = String.format("%s (%s)", name, altName);
-			int textColor = nightMode ? R.color.text_color_secondary_dark : R.color.text_color_secondary_light;
-			SpannableString spannableName = UiUtilities.createColorSpannable(name, view.getContext().getColor(textColor), false, altName);
-			title.setText(spannableName);
-		} else {
-			title.setText(item.getSpannableName());
-		}
-
 		AndroidUiHelper.setTextAndChangeVisibility(addressTv, address);
 		subtitle.setText(typeName);
 
@@ -210,11 +283,23 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 				if (openHourInfo != null) {
 					int colorOpen = R.color.text_color_positive;
 					int colorClosed = R.color.text_color_negative;
+					int colorNearToOpen = R.color.icon_color_warning;
 					SpannableString openHours = MenuController.getSpannableOpeningHours(
 							openHourInfo,
 							ContextCompat.getColor(app, colorOpen),
-							ContextCompat.getColor(app, colorClosed));
-					int colorId = rs.isOpenedForTime(calendar) ? colorOpen : colorClosed;
+							ContextCompat.getColor(app, colorClosed), true);
+
+					String nearToOpen = rs.getNearToOpeningTime(calendar, OpeningHours.ALL_SEQUENCES);
+					boolean isNearToOpen = !Algorithms.isEmpty(nearToOpen);
+
+					int colorId;
+					if (rs.isOpenedForTime(calendar)) {
+						colorId = colorOpen;
+					} else if (isNearToOpen) {
+						colorId = colorNearToOpen;
+					} else {
+						colorId = colorClosed;
+					}
 					if (Algorithms.isEmpty(openHours)) {
 						String openHoursStr = rs.toLocalString();
 						openHours = UiUtilities.createColorSpannable(openHoursStr, app.getColor(colorId), openHoursStr);
@@ -226,7 +311,7 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 						TextView timeText = view.findViewById(R.id.time);
 						ImageView timeIcon = view.findViewById(R.id.time_icon);
 						timeText.setText(openHours);
-						timeIcon.setImageDrawable(app.getUIUtilities().getIcon(R.drawable.ic_action_opening_hour_16, colorId));
+						timeIcon.setImageDrawable(app.getUIUtilities().getIcon(isNearToOpen ? R.drawable.ic_action_closed_hours_16 : R.drawable.ic_action_opening_hour_16, colorId));
 					}
 				} else {
 					timeLayout.setVisibility(View.GONE);
@@ -296,7 +381,7 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 				imageContainer.setBackground(null);
 				imageContainer.setPadding(margin, margin, margin, margin);
 			} else {
-				int topPadding = title.getLineCount() > 1 ? AndroidUtils.dpToPx(app, 8) : 0;
+				int topPadding = titleTv.getLineCount() > 1 ? AndroidUtils.dpToPx(app, 8) : 0;
 				imageContainer.setPadding(0, topPadding, 0, 0);
 			}
 			if (!hasRouteShield) {
@@ -320,4 +405,3 @@ public class SearchResultViewHolder extends RecyclerView.ViewHolder {
 		}
 	}
 }
-

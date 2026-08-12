@@ -5,7 +5,7 @@
     <string name="poi_mooring">Múráil</string>
     <string name="poi_lock_basin">Glasáil báisín</string>
     <string name="poi_notice">Fógra, seamark</string>
-    <string name="poi_pile">Carn</string>
+    <string name="poi_pile">Carnán</string>
     <string name="poi_radar_transponder">Trasfhreagróir radair, seamark</string>
     <string name="poi_radio_station">Stáisiún raidió, seamark</string>
     <string name="poi_signal_station_warning">Stáisiún comharthaíochta, rabhadh</string>
@@ -409,7 +409,6 @@
     <string name="poi_traffic_calming_hump">Hump Luas</string>
     <string name="poi_traffic_calming_island">Oileán tráchta</string>
     <string name="poi_car_repair">Deisiú carranna</string>
-    <string name="poi_service_tyres">Boinn; Boinn; Boinn</string>
     <string name="poi_vehicle_inspection">Cigireacht feithicle</string>
     <string name="poi_car_wash">Nigh carranna</string>
     <string name="poi_fuel">Stáisiún gáis; Stáisiún gásailín; Stáisiún líonta; Stáisiún peitril</string>
@@ -1045,8 +1044,8 @@
     <string name="poi_boat_dinghy_rental_yes">Dinghy: tá</string>
     <string name="poi_boat_canoe_rental_no">Curach: níl</string>
     <string name="poi_government_archive">Cartlann</string>
-    <string name="poi_surface_tartan">TartanName</string>
-    <string name="poi_surface_metal_grid">Greille miotail</string>
+    <string name="poi_surface_tartan">Dromchla: Tartán</string>
+    <string name="poi_surface_metal_grid">Dromchla: Greille miotail</string>
     <string name="poi_location_underground">Suíomh: faoi thalamh</string>
     <string name="poi_location_rooftop">Suíomh: rooftop</string>
     <string name="poi_location_indoor">Suíomh: faoi dhíon</string>
@@ -1153,7 +1152,7 @@
     <string name="poi_changing_table_count">Líon na dtáblaí á athrú</string>
     <string name="poi_changing_table_fee_yes">Táille tábla a athrú: tá</string>
     <string name="poi_changing_table_fee_no">Táille tábla a athrú: níl</string>
-    <string name="poi_charcoal_pile">Carn gualaigh</string>
+    <string name="poi_charcoal_pile">Carnán gualaigh</string>
     <string name="poi_vehicle_forestry">Rochtain ar fheithiclí: foraoiseacht</string>
     <string name="poi_vehicle_delivery">Rochtain ar fheithiclí: seachadadh</string>
     <string name="poi_motorcar_yes">Tá; Mótarcharr</string>
@@ -1498,7 +1497,7 @@
     <string name="poi_wedge">Ding</string>
     <string name="poi_wicket_gate">Geata Wicket</string>
     <string name="poi_toy_library">Leabharlann bréagán</string>
-    <string name="poi_surface_chipseal">ChipsealName</string>
+    <string name="poi_surface_chipseal">Dromchla: Séal sceallóga</string>
     <string name="poi_lock_name">Cuir ainm faoi ghlas</string>
     <string name="poi_maxlength">Fad uasta</string>
     <string name="poi_lock_ref">Tagairt do ghlas</string>
@@ -1899,8 +1898,8 @@
     <string name="poi_motorcycle_tyres_no">Boinn: níl</string>
     <string name="poi_direction_ene">Treo: soir-ó thuaidh</string>
     <string name="poi_government_social_security">Slándáil shóisialta</string>
-    <string name="poi_surface_artificial_turf">Móin shaorga</string>
-    <string name="poi_surface_decoturf">DecoTurfName</string>
+    <string name="poi_surface_artificial_turf">Dromchla: Móna saorga</string>
+    <string name="poi_surface_decoturf">Dromchla: Móin Maisiúcháin</string>
     <string name="poi_visibility_area">Infheictheacht: limistéar</string>
     <string name="poi_operational_status_open">Oscail</string>
     <string name="poi_socket_cee_blue_voltage_filter">CEE voltas cónascaire gorm</string>
@@ -2559,7 +2558,6 @@
     <string name="poi_route_funicular_ref">Funicular</string>
     <string name="poi_service_bicycle_diy_no">Uirlisí rothar le haghaidh deisiú DIY: níl</string>
     <string name="poi_training_computer">Oiliúint: ríomhaire</string>
-    <string name="poi_training_yoga">Oiliúint: ióga</string>
     <string name="poi_industrial_refinery">Cineál: scaglann</string>
     <string name="poi_technical_monument">Séadchomhartha teicniúil</string>
     <string name="poi_clothes_leather">Leathar</string>
@@ -2616,7 +2614,7 @@
     <string name="poi_reservation_required">Riachtanach</string>
     <string name="poi_boat_dinghy_rental_no">Dinghy: níl</string>
     <string name="poi_couloir">Conair</string>
-    <string name="poi_surface_clay">Cré</string>
+    <string name="poi_surface_clay">Dromchla: cré</string>
     <string name="poi_location_underwater">Suíomh: faoi uisce</string>
     <string name="poi_location_overground">Suíomh: os cionn talún</string>
     <string name="poi_water_supply_running_water">Uisce reatha</string>
@@ -4024,7 +4022,6 @@
     <string name="poi_cuisine_burrito">BurritoName</string>
     <string name="poi_cuisine_gyros">GyrosName</string>
     <string name="poi_cuisine_empanada">Taosrán</string>
-    <string name="poi_cuisine_crepes">Creipíní</string>
     <string name="poi_cuisine_meat">Feoil</string>
     <string name="poi_cuisine_wings">Sciatháin</string>
     <string name="poi_cuisine_wine">Fíon</string>
@@ -4940,7 +4937,7 @@
     <string name="poi_climbing_area">Limistéar dreapadóireachta</string>
     <string name="poi_climbing_route">Bealach dreapadóireachta</string>
     <string name="poi_climbing_route_bottom">Bun an bhealaigh dreapadóireachta</string>
-    <string name="poi_cafe_yes">Tá</string>
+    <string name="poi_cafe_yes">Caifé: tá</string>
     <string name="poi_dog_sled_no">Sled madra: níl</string>
     <string name="poi_sled_yes">Sled: tá</string>
     <string name="poi_sled_no">Sled: Níl</string>
@@ -4987,7 +4984,6 @@
     <string name="poi_presbyterian_church">Eaglais Phreispitéireach</string>
     <string name="poi_access_main_tag">Rochtain</string>
     <string name="poi_osmwiki">áiteanna coitianta (Vicipéid)</string>
-    <string name="poi_hazard_additional_yes">Guais</string>
     <string name="poi_hazard_contamination">Éilliú</string>
     <string name="poi_hazard_yes">Guais</string>
     <string name="poi_hazard_landslide">Guais: sciorrtha talún</string>
@@ -5175,4 +5171,7 @@
     <string name="poi_rapids_grade_5">5 (saineolaí)</string>
     <string name="poi_rapids_grade_6">6 (foircneach)</string>
     <string name="poi_rapids_grade_x">X (ní féidir é a rith)</string>
+    <string name="poi_water_type_filter">Cineál uisce</string>
+    <string name="poi_water_lake">Loch</string>
+    <string name="poi_surface_laterite">Dromchla: laterít</string>
 </resources>

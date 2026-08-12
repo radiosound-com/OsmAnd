@@ -57,10 +57,6 @@ public class Algorithms {
 	private static final int BUFFER_SIZE = 1024;
 	private static final Log log = PlatformUtil.getLog(Algorithms.class);
 
-	private static final char[] APOSTROPHES = {'\'', '’', 'ʼ', '´', '`', '′', '‵', 'ʹ'};
-	private static final char[] CHARS_TO_NORMALIZE_KEY = {'’', 'ʼ', '(', ')', '´', '`', '′', '‵', 'ʹ'}; // remove () subcities
-	private static final char[] CHARS_TO_NORMALIZE_VALUE = {'\'', '\'', ' ', ' ', '\'', '\'', '\'', '\'', '\''};
-
 	public static final NumberFormat DECIMAL_FORMAT = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.US));
 
 	private static final String HTML_PATTERN = "<(\"[^\"]*\"|'[^']*'|[^'\">])*>";
@@ -87,82 +83,29 @@ public class Algorithms {
 		}
 		return false;
 	}
-
-	public static String normalizeSearchText(String s) {
-		boolean norm = containsChar(s, CHARS_TO_NORMALIZE_KEY);
-		if (!norm) {
-			return s;
-		}
-		for (int k = 0; k < CHARS_TO_NORMALIZE_KEY.length; k++) {
-			s = s.replace(CHARS_TO_NORMALIZE_KEY[k], CHARS_TO_NORMALIZE_VALUE[k]);
-		}
-		return s;
-	}
-
-	public static String removeApostrophes(String s) {
-		if (!containsChar(s, APOSTROPHES)) {
-			return s;
-		}
-		StringBuilder sb = new StringBuilder(s.length());
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			boolean apostroph = false;
-			for (char d : APOSTROPHES) {
-				if (d == c) {
-					apostroph = true;
-					break;
-				}
-			}
-			if (!apostroph) {
-				sb.append(c);
-			}
-		}
-		return sb.toString();
-	}
 	
-	public static String removeQuotes(String s) {
-		if (!s.contains("«") && !s.contains("»")) {
-			return s;
-		}
-		return s.replace("«", "").replace("»", "");
-	}
-
-	/**
-	 * Split string by words and convert to lowercase, use as delimiter all chars except letters and digits
-	 * @param str input string
-	 * @return result words list
-	 */
-
-	public static List<String> splitByWordsLowercase(String str) {
-		List<String> splitStr = new ArrayList<>();
-		int prev = -1;
-		for (int i = 0; i <= str.length(); i++) {
-			if (i == str.length() ||
-					(!Character.isLetter(str.charAt(i)) && !Character.isDigit(str.charAt(i)))) {
-				if (prev != -1) {
-					String subStr = str.substring(prev, i);
-					splitStr.add(subStr.toLowerCase());
-					prev = -1;
-				}
-			} else {
-				if (prev == -1) {
-					prev = i;
-				}
-			}
-		}
-		return splitStr;
-	}
-
 	public static boolean isEmpty(Collection<?> c) {
 		return c == null || c.size() == 0;
+	}
+
+	public static boolean isNotEmpty(Collection<?> c) {
+		return !isEmpty(c);
 	}
 
 	public static boolean isEmpty(Map<?, ?> map) {
 		return map == null || map.size() == 0;
 	}
 
+	public static boolean isNotEmpty(Map<?, ?> map) {
+		return !isEmpty(map);
+	}
+
 	public static <T> boolean isEmpty(T[] array) {
 		return array == null || array.length == 0;
+	}
+
+	public static <T> boolean isNotEmpty(T[] array) {
+		return !isEmpty(array);
 	}
 
 	public static String emptyIfNull(String s) {
@@ -175,6 +118,10 @@ public class Algorithms {
 
 	public static boolean isEmpty(CharSequence s) {
 		return s == null || s.length() == 0;
+	}
+
+	public static boolean isNotEmpty(CharSequence s) {
+		return !isEmpty(s);
 	}
 
 	public static boolean isBlank(String s) {
@@ -651,7 +598,7 @@ public class Algorithms {
 	public static String capitalizeFirstLetterAndLowercase(String s) {
 		if (s != null && s.length() > 1) {
 			// not very efficient algorithm
-			return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase();
+			return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase(Locale.ROOT);
 		} else {
 			return s;
 		}
@@ -682,6 +629,9 @@ public class Algorithms {
 	 * #AARRGGBB
 	 */
 	public static int parseColor(String colorString) throws IllegalArgumentException {
+		if (isEmpty(colorString)) {
+			throw new IllegalArgumentException("Unknown color " + colorString); //$NON-NLS-1$
+		}
 		if (colorString.charAt(0) == '#') {
 			// Use a long to avoid rollovers on #ffXXXXXX
 			if (colorString.length() == 4) {
@@ -732,7 +682,8 @@ public class Algorithms {
 		for (int k = 0; k < s.length(); k++) {
 			if (isDigit(s.charAt(k))) {
 				i = i * 10 + (s.charAt(k) - '0');
-			} else {
+			} else if (Character.isLetter(s.charAt(k)) || i > 0) {
+				// allow '#3'- > 3 parsed
 				break;
 			}
 		}

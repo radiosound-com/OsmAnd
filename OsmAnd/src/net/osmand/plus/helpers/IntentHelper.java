@@ -52,7 +52,6 @@ import net.osmand.plus.backup.ui.LoginDialogType;
 import net.osmand.plus.chooseplan.ChoosePlanFragment;
 import net.osmand.plus.chooseplan.OsmAndFeature;
 import net.osmand.plus.configmap.tracks.PreselectedTabParams;
-import net.osmand.plus.configmap.tracks.TrackTabType;
 import net.osmand.plus.configmap.tracks.TracksTabsFragment;
 import net.osmand.plus.dashboard.DashboardType;
 import net.osmand.plus.inapp.InAppPurchaseUtils;
@@ -94,6 +93,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -601,9 +601,7 @@ public class IntentHelper {
 					return false;
 				}
 				String name = data.getQueryParameter("name");
-				if (Algorithms.isEmpty(name)) {
-					name = Algorithms.getFileWithoutDirs(url);
-				}
+				name = Algorithms.getFileWithoutDirs(Algorithms.isEmpty(name) ? url : name);
 				if (!name.endsWith(IndexConstants.GPX_FILE_EXT)) {
 					name += IndexConstants.GPX_FILE_EXT;
 				}
@@ -951,7 +949,7 @@ public class IntentHelper {
 
 	@NonNull
 	public static List<Uri> getIntentUris(@NonNull Intent intent) {
-		List<Uri> uris = new ArrayList<>();
+		LinkedHashSet<Uri> uris = new LinkedHashSet<>();
 		Uri data = intent.getData();
 		if (data != null) {
 			uris.add(data);
@@ -965,6 +963,6 @@ public class IntentHelper {
 				}
 			}
 		}
-		return uris;
+		return new ArrayList<>(uris);
 	}
 }

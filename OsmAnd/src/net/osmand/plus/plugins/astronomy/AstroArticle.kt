@@ -1,6 +1,10 @@
 package net.osmand.plus.plugins.astronomy
 
+import android.net.Uri
+import net.osmand.PlatformUtil
 import net.osmand.util.Algorithms
+import org.json.JSONObject
+import java.util.Locale
 
 data class AstroArticle(
     val wikidata: String,
@@ -11,14 +15,44 @@ data class AstroArticle(
     val summaryJson: String?,
     private val mobileHtml: ByteArray?
 ) {
+    companion object {
+        private val LOG = PlatformUtil.getLog(AstroArticle::class.java)
+    }
+
+    fun hasOfflineContent(): Boolean {
+        return mobileHtml?.isNotEmpty() == true
+    }
+
     fun getMobileHtmlString(): String? {
         return mobileHtml?.let {
             try {
                 Algorithms.gzipToString(mobileHtml)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                LOG.error("Error reading offline astronomy article HTML for $wikidata", e)
                 null
             }
         }
+    }
+
+    fun getOnlineArticleUrl(): String? {
+        return getSummaryArticleUrl() ?: buildFallbackArticleUrl()
+    }
+
+    private fun getSummaryArticleUrl(): String? = runCatching {
+        val json = JSONObject(summaryJson ?: return null)
+        val content = json.optJSONObject("content_urls") ?: return null
+        content.optJSONObject("mobile")?.optString("page")
+            ?.takeIf { it.isNotBlank() }
+            ?: content.optJSONObject("desktop")?.optString("page")
+                ?.takeIf { it.isNotBlank() }
+    }.getOrNull()
+
+    private fun buildFallbackArticleUrl(): String? {
+        if (lang.isBlank() || title.isBlank()) {
+            return null
+        }
+        val encodedTitle = Uri.encode(title.trim().replace(' ', '_'))
+        return "https://${lang.lowercase(Locale.ROOT)}.wikipedia.org/wiki/$encodedTitle"
     }
 
     override fun equals(other: Any?): Boolean {
@@ -35,7 +69,7 @@ data class AstroArticle(
         if (summaryJson != other.summaryJson) return false
         if (mobileHtml != null) {
             if (other.mobileHtml == null) return false
-            if (mobileHtml.size != other.mobileHtml.size) return false
+            if (!mobileHtml.contentEquals(other.mobileHtml)) return false
         } else if (other.mobileHtml != null) return false
 
         return true

@@ -34,9 +34,9 @@ import net.osmand.plus.helpers.ColorsPaletteUtils;
 import net.osmand.plus.helpers.FileNameTranslationHelper;
 import net.osmand.plus.mapmarkers.ItineraryType;
 import net.osmand.plus.mapmarkers.MapMarkersGroup;
+import net.osmand.plus.myplaces.favorites.FavoriteFolderFormatter;
 import net.osmand.plus.myplaces.favorites.FavoriteGroup;
 import net.osmand.plus.onlinerouting.engine.OnlineRoutingEngine;
-import net.osmand.plus.plugins.audionotes.AudioVideoNotesPlugin;
 import net.osmand.plus.plugins.audionotes.Recording;
 import net.osmand.plus.plugins.osmedit.OsmEditingPlugin;
 import net.osmand.plus.plugins.osmedit.data.OpenstreetmapPoint;
@@ -51,12 +51,14 @@ import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.ApplicationModeBean;
 import net.osmand.plus.settings.backend.backup.GpxAppearanceInfo;
 import net.osmand.plus.settings.backend.backup.exporttype.ExportType;
+import net.osmand.plus.settings.backend.backup.items.AttachedMediaSettingsItem;
 import net.osmand.plus.settings.backend.backup.items.FileSettingsItem;
 import net.osmand.plus.settings.backend.backup.items.FileSettingsItem.FileSubtype;
 import net.osmand.plus.settings.backend.backup.items.GlobalSettingsItem;
 import net.osmand.plus.settings.backend.backup.items.GpxDirSettingsItem;
 import net.osmand.plus.settings.backend.backup.items.GpxSettingsItem;
 import net.osmand.plus.settings.backend.backup.items.SettingsItem;
+import net.osmand.plus.settings.mediastorage.MediaDirType;
 import net.osmand.plus.settings.fragments.ExportSettingsAdapter.OnItemSelectedListener;
 import net.osmand.plus.shared.SharedUtil;
 import net.osmand.plus.utils.AndroidUtils;
@@ -322,6 +324,10 @@ public class ExportItemsBottomSheet extends MenuBottomSheetDialogFragment {
 			item.setIcon(getIcon(R.drawable.ic_map, getItemIconColor(object)));
 		} else if (object instanceof File file) {
 			setupBottomSheetItemForFile(item, file);
+		} else if (object instanceof AttachedMediaSettingsItem mediaItem) {
+			item.setTitle(mediaItem.getPublicName(app));
+			item.setIcon(getIcon(mediaItem.getIconId(), getItemIconColor(object)));
+			item.setDescription(AndroidUtils.formatSize(app, mediaItem.getSize()));
 		} else if (object instanceof GpxSettingsItem settingsItem) {
 			setupBottomSheetItemForGpx(item, settingsItem.getFile(), settingsItem.getAppearanceInfo());
 		}  else if (object instanceof GpxDirSettingsItem settingsItem) {
@@ -342,7 +348,12 @@ public class ExportItemsBottomSheet extends MenuBottomSheetDialogFragment {
 			item.setTitle(OsmEditingPlugin.getTitle(openstreetmapPoint, app));
 			item.setIcon(getIcon(R.drawable.ic_action_info_dark, getItemIconColor(object)));
 		} else if (object instanceof FavoriteGroup group) {
-			item.setTitle(group.getDisplayName(app));
+			TextView title = item.getView().findViewById(R.id.title);
+			if (title != null) {
+				FavoriteFolderFormatter.setupStyledBreadcrumb(title, group.getName(), nightMode);
+			} else {
+				item.setTitle(FavoriteFolderFormatter.getStyledBreadcrumb(app, group.getName(), nightMode));
+			}
 			int color;
 			if (selectedItems.contains(object)) {
 				color = group.getColor() == 0 ? getColor(R.color.color_favorite) : group.getColor();
@@ -390,7 +401,8 @@ public class ExportItemsBottomSheet extends MenuBottomSheetDialogFragment {
 	}
 
 	private void setupBottomSheetItemForFile(BottomSheetItemWithCompoundButton item, File file) {
-		FileSubtype fileSubtype = FileSubtype.getSubtypeByPath(app, file.getPath());
+		FileSettingsItem settingsItem = item.getTag() instanceof FileSettingsItem fileItem ? fileItem : null;
+		FileSubtype fileSubtype = settingsItem != null ? settingsItem.getSubtype() : FileSubtype.getSubtypeByPath(app, file.getPath());
 		item.setTitle(file.getName());
 		if (file.getAbsolutePath().contains(IndexConstants.RENDERERS_DIR)) {
 			item.setIcon(getIcon(R.drawable.ic_action_map_style, getItemIconColor(item.getTag())));
@@ -398,12 +410,15 @@ public class ExportItemsBottomSheet extends MenuBottomSheetDialogFragment {
 			item.setIcon(getIcon(R.drawable.ic_action_route_distance, getItemIconColor(item.getTag())));
 		} else if (file.getAbsolutePath().contains(IndexConstants.GPX_INDEX_DIR)) {
 			setupBottomSheetItemForGpx(item, file, null);
+		} else if (fileSubtype == FileSubtype.ATTACHED_MEDIA) {
+			item.setIcon(getIcon(getAttachedMediaIconId(file), getItemIconColor(item.getTag())));
+			item.setDescription(AndroidUtils.formatSize(app, file.length()));
 		} else if (file.getAbsolutePath().contains(IndexConstants.AV_INDEX_DIR)) {
-			int iconId = AudioVideoNotesPlugin.getIconIdForRecordingFile(file);
+			int iconId = Recording.getIconIdForRecordingFile(file);
 			if (iconId == -1) {
 				iconId = R.drawable.ic_action_photo_dark;
 			}
-			if (item.getTag() instanceof FileSettingsItem settingsItem) {
+			if (settingsItem != null) {
 				item.setTitle(Recording.getNameForMultimediaFile(app, file.getName(), settingsItem.getLastModifiedTime()));
 			} else {
 				item.setTitle(new Recording(file).getName(app, true));
@@ -431,6 +446,18 @@ public class ExportItemsBottomSheet extends MenuBottomSheetDialogFragment {
 					item.setDescription(formattedSize);
 				}
 			}
+		}
+	}
+
+	private int getAttachedMediaIconId(@NonNull File file) {
+		switch (MediaDirType.fromExtension(Algorithms.getFileNameExtension(file.getName()))) {
+			case AUDIO:
+				return R.drawable.ic_action_micro_dark;
+			case VIDEO:
+				return R.drawable.ic_action_video_dark;
+			case PHOTO:
+			default:
+				return R.drawable.ic_action_photo_dark;
 		}
 	}
 

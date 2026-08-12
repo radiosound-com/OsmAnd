@@ -100,7 +100,8 @@ public class ItemViewHolder {
 		ASK_FOR_SRTM_PLUGIN_ENABLE,
 		ASK_FOR_FULL_VERSION_PURCHASE,
 		ASK_FOR_DEPTH_CONTOURS_PURCHASE,
-		ASK_FOR_WEATHER_PURCHASE
+		ASK_FOR_WEATHER_PURCHASE,
+		ASK_FOR_ASTRONOMY_PURCHASE
 	}
 
 
@@ -421,6 +422,8 @@ public class ItemViewHolder {
 				action = RightButtonAction.ASK_FOR_FULL_VERSION_PURCHASE;
 			} else if ((item.getType() == DEPTH_CONTOUR_FILE || item.getType() == DEPTH_MAP_FILE) && !depthContoursPurchased) {
 				action = RightButtonAction.ASK_FOR_DEPTH_CONTOURS_PURCHASE;
+			} else if (item.getType() == STAR_MAP_FILE && !InAppPurchaseUtils.isAstronomyAvailable(app)) {
+				return RightButtonAction.ASK_FOR_ASTRONOMY_PURCHASE;
 			}
 		}
 		return action;
@@ -435,6 +438,9 @@ public class ItemViewHolder {
 						case ASK_FOR_FULL_VERSION_PURCHASE:
 							app.logEvent("in_app_purchase_show_from_wiki_context_menu");
 							ChoosePlanFragment.showInstance(context, OsmAndFeature.WIKIPEDIA);
+							break;
+						case ASK_FOR_ASTRONOMY_PURCHASE:
+							ChoosePlanFragment.showInstance(context, OsmAndFeature.ASTRONOMY);
 							break;
 						case ASK_FOR_WEATHER_PURCHASE:
 							app.logEvent("in_app_purchase_show_from_weather_context_menu");
@@ -499,7 +505,7 @@ public class ItemViewHolder {
 		}
 		if (removeItemClickListener != null) {
 			optionsMenu.getMenu()
-					.add(R.string.shared_string_remove)
+					.add(R.string.shared_string_delete)
 					.setIcon(getThemedIcon(context, R.drawable.ic_action_remove_dark))
 					.setOnMenuItemClickListener(removeItemClickListener);
 		}
@@ -516,34 +522,17 @@ public class ItemViewHolder {
 	}
 
 	protected void download(DownloadItem item, DownloadResourceGroup parentOptional) {
-		boolean handled = false;
 		if (parentOptional != null && item instanceof IndexItem indexItem) {
 			WorldRegion region = DownloadResourceGroup.getRegion(parentOptional);
 			context.setDownloadItem(region, indexItem.getTargetFile(app).getAbsolutePath());
-		}
-		if (item.getType() == DownloadActivityType.ROADS_FILE && parentOptional != null) {
-			for (IndexItem ii : parentOptional.getIndividualResources()) {
-				if (ii.getType() == DownloadActivityType.NORMAL_FILE) {
-					if (ii.isDownloaded()) {
-						handled = true;
-						confirmDownload(item);
-					}
-					break;
-				}
+
+			File conflict = DuplicateMapHelper.findConflictingFile(app, indexItem, parentOptional);
+			if (conflict != null) {
+				DuplicateMapDownloadDialogController.showDialog(context, indexItem, conflict);
+				return;
 			}
 		}
-		if (!handled) {
-			startDownload(item);
-		}
-	}
-
-	private void confirmDownload(@NonNull DownloadItem item) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(context);
-		builder.setTitle(R.string.are_you_sure);
-		builder.setMessage(R.string.confirm_download_roadmaps);
-		builder.setNegativeButton(R.string.shared_string_cancel, null);
-		builder.setPositiveButton(R.string.shared_string_download, (dialog, which) -> startDownload(item));
-		builder.show();
+		startDownload(item);
 	}
 
 	private void startDownload(DownloadItem item) {

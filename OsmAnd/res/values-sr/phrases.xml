@@ -219,7 +219,6 @@
     <string name="poi_traffic_calming_island">Саобраћајно острво</string>
     <string name="poi_traffic_signals">Стоп светло</string>
     <string name="poi_car_repair">Поправка кола</string>
-    <string name="poi_service_tyres">Гуме;Гума;Гуме</string>
     <string name="poi_vehicle_inspection">Преглед возила</string>
     <string name="poi_car_wash">Прање кола</string>
     <string name="poi_fuel">Бензинска пумпа;Пумпа за плин;Станица за пуњење</string>
@@ -2038,7 +2037,6 @@
     <string name="poi_training_art">Тренинг: уметност</string>
     <string name="poi_training_cooking">Тренинг: кување</string>
     <string name="poi_training_computer">Тренинг: рачунар</string>
-    <string name="poi_training_yoga">Тренинг: јога</string>
     <string name="poi_training_martial_art">Тренинг: борилачке вештине</string>
     <string name="poi_training_aviation">Тренинг: авијација</string>
     <string name="poi_training_hairdressing">Тренинг: шишање</string>
@@ -2389,7 +2387,6 @@
     <string name="poi_cuisine_souvlaki">Сувлаки</string>
     <string name="poi_cuisine_yogurt">Јогурт</string>
     <string name="poi_cuisine_gyros">Гирос</string>
-    <string name="poi_cuisine_crepes">Палачинке</string>
     <string name="poi_cuisine_yakiniku">Јакинику</string>
     <string name="poi_cuisine_suki">Суки</string>
     <string name="poi_cuisine_udon">Удон</string>
@@ -2972,11 +2969,11 @@
     <string name="poi_location_overground">Локација: надземље</string>
     <string name="poi_location_underwater">Локација: подводна</string>
     <string name="poi_location_underground">Локација: подземна</string>
-    <string name="poi_surface_metal_grid">Метална мрежа</string>
-    <string name="poi_surface_decoturf">Декотрава</string>
-    <string name="poi_surface_artificial_turf">Вештачка трава</string>
-    <string name="poi_surface_tartan">Тартан</string>
-    <string name="poi_surface_clay">Глина</string>
+    <string name="poi_surface_metal_grid">Површина: Метална решетка</string>
+    <string name="poi_surface_decoturf">Површина: Декотрава</string>
+    <string name="poi_surface_artificial_turf">Подлога: Вештачка трава</string>
+    <string name="poi_surface_tartan">Површина: Тартан</string>
+    <string name="poi_surface_clay">Површина: глина</string>
     <string name="poi_mountain_area">Планинско подручје</string>
     <string name="poi_couloir">Кулуар</string>
     <string name="poi_gorge">Клисура</string>
@@ -4566,7 +4563,7 @@
     <string name="poi_lock_name">Брава воденог тока</string>
     <string name="poi_boat_private">Приступ чамцем: приватан</string>
     <string name="poi_barrier_planter">Плантер</string>
-    <string name="poi_surface_chipseal">Комбинован асфалт</string>
+    <string name="poi_surface_chipseal">Површина: Комбинован асфалт</string>
     <string name="poi_barrier_board">Баријерна плоча</string>
     <string name="poi_boat_destination">Приступ чамцем: одредиште</string>
     <string name="poi_boat_designated">Приступ чамцем: намењен</string>
@@ -4938,7 +4935,7 @@
     <string name="poi_route_activity_type_horse_riding">Јахање коњима</string>
     <string name="poi_climbing_area">Подручје за пењање</string>
     <string name="poi_climbing_route">Рута за пењање</string>
-    <string name="poi_cafe_yes">Да</string>
+    <string name="poi_cafe_yes">Кафе: Да</string>
     <string name="poi_climbing_route_bottom">Пењачка рута дно</string>
     <string name="poi_cafe_filter">Кафе филтер</string>
     <string name="poi_sled_yes">След: да</string>
@@ -4990,7 +4987,6 @@
     <string name="poi_aerodrome_type_airfield">Писта</string>
     <string name="poi_consulate">Конзулат</string>
     <string name="poi_hazard_landslide">Одрон</string>
-    <string name="poi_hazard_additional_yes">Опасност</string>
     <string name="poi_hazard_falling_rocks">Камење које пада</string>
     <string name="poi_hazard_contamination">Контаминација</string>
     <string name="poi_hazard_yes">Опасност</string>
@@ -5175,4 +5171,7 @@
     <string name="poi_rapids_grade_5">5 (стручни)</string>
     <string name="poi_rapids_grade_6">6 (екстремно)</string>
     <string name="poi_rapids_grade_x">X (не може се кретати)</string>
+    <string name="poi_water_type_filter">Врста воде</string>
+    <string name="poi_water_lake">Језеро</string>
+    <string name="poi_surface_laterite">Површина: латерит</string>
 </resources>

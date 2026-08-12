@@ -55,7 +55,6 @@ import net.osmand.plus.quickaction.actions.LocationSimulationAction;
 import net.osmand.plus.settings.backend.ApplicationMode;
 import net.osmand.plus.settings.backend.WidgetsAvailabilityHelper;
 import net.osmand.plus.settings.backend.preferences.OsmandPreference;
-import net.osmand.plus.settings.backend.preferences.CommonPreference;
 import net.osmand.plus.settings.enums.ScreenLayoutMode;
 import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.simulation.DashSimulateFragment;
@@ -68,6 +67,7 @@ import net.osmand.plus.views.mapwidgets.WidgetInfoCreator;
 import net.osmand.plus.views.mapwidgets.WidgetType;
 import net.osmand.plus.views.mapwidgets.WidgetsPanel;
 import net.osmand.plus.views.mapwidgets.widgets.MapWidget;
+import net.osmand.plus.views.mapwidgets.widgetstates.MemoryWidgetState;
 import net.osmand.plus.views.mapwidgets.widgetstates.ZoomLevelWidgetState;
 import net.osmand.plus.widgets.ctxmenu.ContextMenuAdapter;
 import net.osmand.plus.widgets.ctxmenu.data.ContextMenuItem;
@@ -116,9 +116,11 @@ public class OsmandDevelopmentPlugin extends OsmandPlugin {
 		pluginPreferences.add(settings.SIMULATE_OBD_DATA);
 		pluginPreferences.add(settings.DEBUG_RENDERING_INFO);
 		pluginPreferences.add(settings.SHOULD_SHOW_FREE_VERSION_BANNER);
+		pluginPreferences.add(settings.SHOULD_SHOW_DISCOUNT_BOTTOM_SHEET);
 		pluginPreferences.add(settings.TRANSPARENT_STATUS_BAR);
 		pluginPreferences.add(settings.MEMORY_ALLOCATED_FOR_ROUTING);
 		pluginPreferences.add(settings.SHOW_INFO_ABOUT_PRESSED_KEY);
+		pluginPreferences.add(settings.USE_SPATIAL_TEXT_SEARCH);
 
 		USE_RASTER_SQLITEDB = registerBooleanPreference("use_raster_sqlitedb", false).makeGlobal().makeShared().cache();
 		SAVE_BEARING_TO_GPX = registerBooleanPreference("save_bearing_to_gpx", false).makeGlobal().makeShared().cache();
@@ -245,7 +247,8 @@ public class OsmandDevelopmentPlugin extends OsmandPlugin {
 			case DEV_TARGET_DISTANCE:
 				return new TargetDistanceWidget(mapActivity, customId, widgetsPanel);
 			case DEV_MEMORY:
-				return new MemoryInfoWidget(mapActivity, customId, widgetsPanel);
+				MemoryWidgetState memoryWidgetState = new MemoryWidgetState(app, customId);
+				return new MemoryInfoWidget(mapActivity, memoryWidgetState, customId, widgetsPanel);
 		}
 		return null;
 	}

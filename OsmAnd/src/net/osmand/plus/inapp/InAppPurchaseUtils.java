@@ -111,7 +111,7 @@ public class InAppPurchaseUtils {
 	}
 
 	public static boolean isAstronomyAvailable(@NonNull OsmandApplication app) {
-		return isOsmAndProAvailable(app) || isBrandPromoAvailable(app) || isMapsPlusAvailable(app) || isFullVersionAvailable(app);
+		return Version.isPaidVersion(app) || checkDeveloperBuildIfNeeded(app, true);
 	}
 
 	public static boolean isProWidgetsAvailable(@NonNull OsmandApplication app) {
@@ -159,6 +159,10 @@ public class InAppPurchaseUtils {
 
 	public static boolean isBuildingsCustomColorAvailable(@NonNull OsmandApplication app) {
 		return Version.isPaidVersion(app) || checkDeveloperBuildIfNeeded(app, true);
+	}
+
+	public static boolean isCustomWidgetBackgroundColorAvailable(@NonNull OsmandApplication app) {
+		return Version.isPaidVersion(app);
 	}
 
 	public static boolean isGradientEditorAvailable(@NonNull OsmandApplication app) {

@@ -32,6 +32,7 @@ import net.osmand.plus.firstusage.FirstUsageWizardFragment;
 import net.osmand.plus.mapcontextmenu.MapContextMenu;
 import net.osmand.plus.mapcontextmenu.builders.cards.dialogs.ContextMenuCardDialogFragment;
 import net.osmand.plus.mapcontextmenu.other.MapMultiSelectionMenu;
+import net.osmand.plus.mapcontextmenu.other.TrackDetailsMenuFragment;
 import net.osmand.plus.mapmarkers.PlanRouteFragment;
 import net.osmand.plus.measurementtool.GpxApproximationFragment;
 import net.osmand.plus.measurementtool.MeasurementToolFragment;
@@ -51,6 +52,7 @@ import net.osmand.plus.settings.fragments.SettingsScreenType;
 import net.osmand.plus.track.fragments.GpsFilterFragment;
 import net.osmand.plus.track.fragments.TrackAppearanceFragment;
 import net.osmand.plus.track.fragments.TrackMenuFragment;
+import net.osmand.plus.views.mapwidgets.configure.appearance.WidgetsAppearanceFragment;
 import net.osmand.plus.utils.AndroidUtils;
 
 import org.apache.commons.logging.Log;
@@ -85,7 +87,8 @@ public class MapFragmentsHelper implements OnPreferenceStartFragmentCallback {
 	public BaseFullScreenFragment getVisibleBaseFullScreenFragment(int... ids) {
 		for (int id : ids) {
 			Fragment fragment = getSupportFragmentManager().findFragmentById(id);
-			if (fragment != null && !fragment.isRemoving() && fragment instanceof BaseFullScreenFragment
+			if (fragment != null && fragment.isAdded() && !fragment.isRemoving()
+					&& fragment instanceof BaseFullScreenFragment
 					&& ((BaseFullScreenFragment) fragment).getStatusBarColorId() != -1) {
 				return (BaseFullScreenFragment) fragment;
 			}
@@ -97,7 +100,8 @@ public class MapFragmentsHelper implements OnPreferenceStartFragmentCallback {
 	public BaseSettingsFragment getVisibleBaseSettingsFragment(int... ids) {
 		for (int id : ids) {
 			Fragment fragment = getSupportFragmentManager().findFragmentById(id);
-			if (fragment != null && !fragment.isRemoving() && fragment instanceof BaseSettingsFragment
+			if (fragment != null && fragment.isAdded() && !fragment.isRemoving()
+					&& fragment instanceof BaseSettingsFragment
 					&& ((BaseSettingsFragment) fragment).getStatusBarColorId() != -1) {
 				return (BaseSettingsFragment) fragment;
 			}
@@ -190,6 +194,11 @@ public class MapFragmentsHelper implements OnPreferenceStartFragmentCallback {
 	}
 
 	@Nullable
+	public TrackDetailsMenuFragment getTrackDetailsMenuFragment() {
+		return getFragment(TrackDetailsMenuFragment.TAG);
+	}
+
+	@Nullable
 	public TrackAppearanceFragment getTrackAppearanceFragment() {
 		return getFragment(TrackAppearanceFragment.TAG);
 	}
@@ -215,6 +224,11 @@ public class MapFragmentsHelper implements OnPreferenceStartFragmentCallback {
 	@Nullable
 	public ConfigureMapOptionFragment getConfigureMapOptionFragment() {
 		return getFragment(ConfigureMapOptionFragment.TAG);
+	}
+
+	@Nullable
+	public WidgetsAppearanceFragment getWidgetsAppearanceFragment() {
+		return getFragment(WidgetsAppearanceFragment.Companion.getTAG());
 	}
 
 	@Nullable
@@ -247,8 +261,7 @@ public class MapFragmentsHelper implements OnPreferenceStartFragmentCallback {
 
 	@Nullable
 	public FirstUsageWizardFragment getFirstUsageWizardFragment() {
-		FirstUsageWizardFragment fragment = (FirstUsageWizardFragment) getSupportFragmentManager()
-				.findFragmentByTag(FirstUsageWizardFragment.TAG);
+		FirstUsageWizardFragment fragment = getFragment(FirstUsageWizardFragment.TAG);
 		return fragment != null && !fragment.isDetached() ? fragment : null;
 	}
 
@@ -261,10 +274,10 @@ public class MapFragmentsHelper implements OnPreferenceStartFragmentCallback {
 
 	@MainThread
 	public boolean removeFragment(String tag) {
-		FragmentManager fm = getSupportFragmentManager();
-		Fragment fragment = fm.findFragmentByTag(tag);
+		FragmentManager manager = getSupportFragmentManager();
+		Fragment fragment = manager.findFragmentByTag(tag);
 		if (fragment != null) {
-			fm.beginTransaction()
+			manager.beginTransaction()
 					.remove(fragment)
 					.commitNowAllowingStateLoss();
 			return true;
