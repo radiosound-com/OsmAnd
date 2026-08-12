@@ -264,6 +264,12 @@ public class NavigationSession extends Session implements NavigationListener, Os
 	@Override
 	public void onStart(@NonNull LifecycleOwner owner) {
 		OsmandApplication app = getApp();
+		// CarAppActivity can have one embedded session and one full-screen session at the same
+		// time. The visible session must own the app-wide callbacks while the other task is
+		// backgrounded, otherwise returning Home leaves the embedded panel waiting for a template.
+		if (app.getCarNavigationSession() != this) {
+			app.setCarNavigationSession(this);
+		}
 		routingHelper.addListener(this);
 
 		ApplicationMode appMode = settings.getApplicationMode();
@@ -332,7 +338,9 @@ public class NavigationSession extends Session implements NavigationListener, Os
 		disconnectCarUxRestrictions();
 		clearCarContext();
 		app.getLocationProvider().removeLocationListener(this);
-		app.setCarNavigationSession(null);
+		if (app.getCarNavigationSession() == this) {
+			app.setCarNavigationSession(null);
+		}
 	}
 
 
