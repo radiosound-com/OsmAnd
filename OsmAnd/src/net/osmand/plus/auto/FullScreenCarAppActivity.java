@@ -1,41 +1,27 @@
 package net.osmand.plus.auto;
 
-import android.app.Activity;
-import android.app.ActivityManager;
-import android.content.ComponentName;
-import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.car.app.activity.CarAppActivity;
+import androidx.car.app.SessionInfo;
+import androidx.car.app.activity.BaseCarAppActivity;
 
-/** Launches the stock CarAppActivity into a fresh full-screen task. */
-public final class FullScreenCarAppActivity extends Activity {
+/**
+ * Full-screen Automotive entry point with the same renderer initialization as CarAppActivity.
+ *
+ * <p>This is a real car-app activity rather than a transparent launcher that starts a second
+ * CarAppActivity task. Keeping the declared launcher as the surface-owning activity lets the
+ * Automotive task transition resize and preserve it like any other full-screen maps activity.
+ */
+public final class FullScreenCarAppActivity extends BaseCarAppActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		ActivityManager activityManager = getSystemService(ActivityManager.class);
-		for (ActivityManager.AppTask appTask : activityManager.getAppTasks()) {
-			ActivityManager.RecentTaskInfo taskInfo = appTask.getTaskInfo();
-			if (taskInfo.id == getTaskId() || !isCarAppTask(taskInfo)) {
-				continue;
-			}
-			appTask.finishAndRemoveTask();
+		String sessionId = getIntent().getIdentifier();
+		if (sessionId == null) {
+			sessionId = String.valueOf(System.identityHashCode(this));
 		}
-
-		Intent intent = new Intent(this, CarAppActivity.class);
-		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-		startActivity(intent);
-		finish();
-	}
-
-	private static boolean isCarAppTask(ActivityManager.RecentTaskInfo taskInfo) {
-		return isCarAppActivity(taskInfo.baseActivity) || isCarAppActivity(taskInfo.topActivity);
-	}
-
-	private static boolean isCarAppActivity(ComponentName componentName) {
-		return componentName != null
-				&& CarAppActivity.class.getName().equals(componentName.getClassName());
+		bindToViewModel(new SessionInfo(/* displayType= */ 0, sessionId));
 	}
 }
