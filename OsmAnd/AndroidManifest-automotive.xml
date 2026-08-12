@@ -59,6 +59,13 @@
 			<meta-data android:name="distractionOptimized" android:value="true" />
 		</activity>
 
+		<!-- Separate renderer identity lets the embedded and full-screen activities coexist. -->
+		<service
+			android:name="net.osmand.plus.auto.FullScreenNavigationCarAppService"
+			android:process="${applicationId}"
+			android:foregroundServiceType="location"
+			android:exported="true" />
+
 		<!-- App-drawer Nightly entry: a dedicated full-screen car-app task. -->
 		<activity
 			android:name="net.osmand.plus.auto.FullScreenCarAppActivity"

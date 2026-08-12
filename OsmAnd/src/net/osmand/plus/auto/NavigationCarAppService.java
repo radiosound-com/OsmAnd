@@ -31,7 +31,7 @@ import java.util.List;
  * details, see the <a href="https://developer.android.com/training/cars/navigation">Android for
  * Cars Library developer guide</a>.
  */
-public final class NavigationCarAppService extends CarAppService implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class NavigationCarAppService extends CarAppService implements ActivityCompat.OnRequestPermissionsResultCallback {
 
 	private static final org.apache.commons.logging.Log LOG = PlatformUtil.getLog(NavigationCarAppService.class);
 	private boolean foreground = false;
