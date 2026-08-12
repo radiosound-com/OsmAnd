@@ -139,8 +139,9 @@ public class OsmandMap {
 	}
 
 	public float getTextScale() {
-		float scale = app.getSettings().TEXT_SCALE.get();
-		return scale * getCarDensityScaleCoef();
+		// The car surface density is already applied to the viewport and map density.
+		// Applying it here as well makes labels, shields, and map icons grow twice.
+		return app.getSettings().TEXT_SCALE.get();
 	}
 
 	public float getOriginalTextScale() {
