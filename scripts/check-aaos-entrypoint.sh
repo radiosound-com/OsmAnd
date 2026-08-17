@@ -18,6 +18,21 @@ if [ "$resolved" != "$COMPONENT" ]; then
 	exit 1
 fi
 
+host_count=$(
+	"$ADB" shell pm list packages \
+		| tr -d '\r' \
+		| grep -E -c '^package:com\.android\.car\.libraries\.templates\.host$' || true
+)
+stock_host_count=$(
+	"$ADB" shell pm list packages \
+		| tr -d '\r' \
+		| grep -E -c '^package:com\.android\.car\.templates\.host$' || true
+)
+if [ "$host_count" -ne 1 ] || [ "$stock_host_count" -ne 0 ]; then
+	echo "FAIL: expected only Caramel's templates host (custom=$host_count stock=$stock_host_count)" >&2
+	exit 1
+fi
+
 "$ADB" shell am force-stop "$PACKAGE"
 "$ADB" shell am start -W -n "$COMPONENT" >/dev/null
 sleep 2
