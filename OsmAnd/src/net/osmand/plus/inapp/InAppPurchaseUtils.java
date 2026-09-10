@@ -2,6 +2,7 @@ package net.osmand.plus.inapp;
 
 import androidx.annotation.NonNull;
 
+import net.osmand.plus.BuildConfig;
 import net.osmand.plus.OsmandApplication;
 import net.osmand.plus.Version;
 import net.osmand.plus.settings.backend.backup.exporttype.ExportType;
@@ -170,6 +171,11 @@ public class InAppPurchaseUtils {
 	}
 
 	public static boolean isAndroidAutoAvailable(@NonNull OsmandApplication app) {
+		// The standalone Automotive variant includes car navigation without a trial.
+		// Keep this exemption local to car access, not other purchased features.
+		if ("automotive".equals(BuildConfig.BUILD_TYPE)) {
+			return true;
+		}
 		long time = System.currentTimeMillis();
 		long installTime = Math.max(Version.getUpdateTime(app), Version.getInstallTime(app));
 		if (time >= installTime + ANDROID_AUTO_START_DATE_MS) {
